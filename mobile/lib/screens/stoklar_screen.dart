@@ -11,6 +11,7 @@ import '../services/depo_service.dart' show AktifSayimException;
 import '../widgets/bildirim.dart';
 import '../widgets/aktif_sayim_dialog.dart';
 import 'app_layout.dart';
+import '../providers/language_provider.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 const _P = Color(0xFF6C53F5);
@@ -112,12 +113,12 @@ class _StoklarScreenState extends ConsumerState<StoklarScreen> {
             const SizedBox(height: 12),
             Container(width: 40, height: 4, decoration: BoxDecoration(color: const Color(0xFFE5E7EB), borderRadius: BorderRadius.circular(2))),
             const SizedBox(height: 16),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(children: [
-                Icon(Icons.business, color: _P, size: 20),
-                SizedBox(width: 8),
-                Text('İşletme Seçin', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1F2937))),
+                const Icon(Icons.business, color: _P, size: 20),
+                const SizedBox(width: 8),
+                Text(t('ui.select_business'), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1F2937))),
               ]),
             ),
             const SizedBox(height: 12),
@@ -196,11 +197,11 @@ class _StoklarScreenState extends ConsumerState<StoklarScreen> {
         canDelete: canDelete,
         onKaydedildi: () {
           if (_seciliIsletmeId != null) _fetchUrunler(_seciliIsletmeId!);
-          showBildirim(context, 'Stok güncellendi', tip: BildirimTip.bilgi);
+          showBildirim(context, t('app.stock_updated'), tip: BildirimTip.bilgi);
         },
         onSilindi: () {
           if (_seciliIsletmeId != null) _fetchUrunler(_seciliIsletmeId!);
-          showBildirim(context, 'Stok silindi', tip: BildirimTip.hata);
+          showBildirim(context, t('app.stock_deleted'), tip: BildirimTip.hata);
         },
       ),
     );
@@ -216,7 +217,7 @@ class _StoklarScreenState extends ConsumerState<StoklarScreen> {
         seciliIsletmeId: _seciliIsletmeId,
         onKaydedildi: () {
           if (_seciliIsletmeId != null) _fetchUrunler(_seciliIsletmeId!);
-          showBildirim(context, 'Stok eklendi');
+          showBildirim(context, t('app.stock_added'));
         },
       ),
     );
@@ -226,7 +227,7 @@ class _StoklarScreenState extends ConsumerState<StoklarScreen> {
   Widget build(BuildContext context) {
     final canEkle = _seciliIsletmeId != null && ref.read(authProvider.notifier).isletmeYetkisi(_seciliIsletmeId!, 'urun', 'ekle');
     return AppLayout(
-      pageTitle: 'Stoklar',
+      pageTitle: t('ui.stocks'),
       showBack: true,
       onHeaderAction: canEkle ? _showStokEkle : null,
       headerActionIcon: Icons.add,
@@ -346,13 +347,13 @@ class _StoklarScreenState extends ConsumerState<StoklarScreen> {
                     : _isletmeler.isEmpty
                         ? _EmptyState(
                             icon: Icons.business,
-                            title: 'Atanmış işletme yok',
-                            subtitle: 'Yöneticinizle iletişime geçin',
+                            title: t('app.no_assigned_business'),
+                            subtitle: t('app.contact_admin'),
                           )
                         : _filtreliUrunler.isEmpty
                             ? _EmptyState(
                                 icon: Icons.search,
-                                title: 'Ürün bulunamadı',
+                                title: t('app.product_not_found'),
                               )
                             : ListView.builder(
                                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
@@ -1894,7 +1895,7 @@ class _EmptyState extends StatelessWidget {
   final String title;
   final String? subtitle;
 
-  const _EmptyState({required this.icon, required this.title, this.subtitle});
+  _EmptyState({required this.icon, required this.title, this.subtitle});
 
   @override
   Widget build(BuildContext context) {

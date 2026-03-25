@@ -9,6 +9,7 @@ import '../services/sayim_service.dart';
 import '../services/urun_service.dart';
 import '../widgets/bildirim.dart';
 import 'app_layout.dart';
+import '../providers/language_provider.dart';
 
 const _P = Color(0xFF6C53F5);
 const _PL = Color(0x1A6C53F5);
@@ -195,7 +196,7 @@ class _UrunEkleScreenState extends ConsumerState<UrunEkleScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Barkod Okut', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text(t('app.scan_barcode'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                   GestureDetector(
                     onTap: () => Navigator.pop(ctx),
                     child: Container(
@@ -222,9 +223,9 @@ class _UrunEkleScreenState extends ConsumerState<UrunEkleScreen> {
                 ),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.all(16),
-              child: Text('Barkodu çerçeve içine hizalayın', style: TextStyle(color: Colors.white70, fontSize: 12)),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(t('app.align_barcode'), style: const TextStyle(color: Colors.white70, fontSize: 12)),
             ),
           ],
         ),
@@ -246,12 +247,12 @@ class _UrunEkleScreenState extends ConsumerState<UrunEkleScreen> {
       final urun = await UrunService.barkodBul(_isletmeId!, barkod);
       if (urun != null && urun['id'] != null) {
         _urunSec(urun);
-        _showSnack('Ürün bulundu: ${urun['urun_adi'] ?? barkod}');
+        _showSnack('${t("app.product_found")}: ${urun["urun_adi"] ?? barkod}');
       } else {
-        _showSnack('Bu barkoda ait ürün bulunamadı');
+        _showSnack(t('app.barcode_not_found'));
       }
     } catch (_) {
-      _showSnack('Bu barkoda ait ürün bulunamadı');
+      _showSnack(t('app.barcode_not_found'));
     }
   }
 
@@ -285,19 +286,19 @@ class _UrunEkleScreenState extends ConsumerState<UrunEkleScreen> {
   Future<void> _handleEkle(String? miktarOverride) async {
     final miktar = miktarOverride ?? _miktar;
     if (_isimController.text.trim().isEmpty) {
-      _showSnack('Ürün ismi boş olamaz.', basarili: false);
+      _showSnack(t('app.product_name_empty'), basarili: false);
       return;
     }
     if (miktar.isEmpty) {
-      _showSnack('Miktar girin.', basarili: false);
+      _showSnack(t('app.enter_quantity_short'), basarili: false);
       return;
     }
     if (_urunId == null) {
-      _showSnack('Listeden bir ürün seçin.', basarili: false);
+      _showSnack(t('app.select_from_list'), basarili: false);
       return;
     }
     if (_birim.isEmpty) {
-      _showSnack('Birim seçin.', basarili: false);
+      _showSnack(t('app.select_unit'), basarili: false);
       return;
     }
 
@@ -308,7 +309,7 @@ class _UrunEkleScreenState extends ConsumerState<UrunEkleScreen> {
         'miktar': double.parse(miktar),
         'birim': _birim,
       });
-      _showSnack('Ürün sayıma eklendi!');
+      _showSnack(t('app.product_added_to_count'));
       _temizle();
       final urun = sonuc['isletme_urunler'];
       setState(() {
@@ -317,7 +318,7 @@ class _UrunEkleScreenState extends ConsumerState<UrunEkleScreen> {
         _sonEklenenBirim = sonuc['birim']?.toString() ?? '';
       });
     } catch (e) {
-      _showSnack('Kalem eklenemedi.', basarili: false);
+      _showSnack(t('app.item_add_failed'), basarili: false);
     }
     setState(() => _ekleniyor = false);
   }
@@ -325,7 +326,7 @@ class _UrunEkleScreenState extends ConsumerState<UrunEkleScreen> {
   @override
   Widget build(BuildContext context) {
     return AppLayout(
-      pageTitle: 'Ürün Ekle',
+      pageTitle: t('ui.add_product'),
       showBack: true,
       child: Column(
         children: [
@@ -351,8 +352,7 @@ class _UrunEkleScreenState extends ConsumerState<UrunEkleScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     )
-                  : const Text(
-                      'Son eklenen ürün',
+                  : Text(t('app.last_added_product'),
                       style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFF059669)),
                     ),
             ),
@@ -379,12 +379,12 @@ class _UrunEkleScreenState extends ConsumerState<UrunEkleScreen> {
                     children: [
                       Row(
                         children: [
-                          _label('ÜRÜN İSMİ 1'),
+                          _label(t('app.product_name_1')),
                           if (_urunId != null)
-                            const Padding(
-                              padding: EdgeInsets.only(left: 6),
-                              child: Text('✓ seçildi',
-                                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Color(0xFF10B981))),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 6),
+                              child: Text('\u2713 ${t("app.selected")}',
+                                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Color(0xFF10B981))),
                             ),
                         ],
                       ),
@@ -480,7 +480,7 @@ class _UrunEkleScreenState extends ConsumerState<UrunEkleScreen> {
                   const SizedBox(height: 16),
 
                   // Ürün İsmi 2
-                  _label('ÜRÜN İSMİ 2'),
+                  _label(t('app.product_name_2')),
                   const SizedBox(height: 6),
                   _buildSearchField(
                     controller: _isim2Controller,
@@ -492,7 +492,7 @@ class _UrunEkleScreenState extends ConsumerState<UrunEkleScreen> {
                   const SizedBox(height: 16),
 
                   // Ürün Kodu
-                  const Text('ÜRÜN KODU',
+                  Text(t('app.product_code'),
                       style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Color(0xFFD1D5DB), letterSpacing: 0.5)),
                   const SizedBox(height: 4),
                   TextField(

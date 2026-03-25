@@ -114,7 +114,7 @@ function register_kullanicilar_routes(Router $router): void {
         $stmt = $pdo->prepare('SELECT * FROM kullanicilar WHERE id = ? AND aktif = 1');
         $stmt->execute([$id]);
         $user = $stmt->fetch();
-        if (!$user) json_error('Kullanıcı bulunamadı.', 404);
+        if (!$user) json_error(__t('kullanici.not_found'), 404);
 
         $user = remove_password_hash($user);
         $user['aktif'] = (bool)(int)$user['aktif'];
@@ -157,17 +157,17 @@ function register_kullanicilar_routes(Router $router): void {
         $telefon  = trim($body['telefon'] ?? '');
 
         // Validasyonlar
-        if ($ad_soyad === '') json_error('Ad soyad zorunludur.', 400);
-        if (mb_strlen($ad_soyad) > 100) json_error('Ad soyad en fazla 100 karakter olabilir.', 400);
-        if ($email === '') json_error('Email zorunludur.', 400);
-        if (mb_strlen($email) > 255) json_error('Email en fazla 255 karakter olabilir.', 400);
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) json_error('Geçerli bir email adresi giriniz.', 400);
-        if ($sifre === '') json_error('Şifre zorunludur.', 400);
-        if (mb_strlen($sifre) < 8) json_error('Şifre en az 8 karakter olmalıdır.', 400);
-        if (mb_strlen($sifre) > 128) json_error('Şifre en fazla 128 karakter olabilir.', 400);
-        if (!in_array($rol, ['admin', 'kullanici'], true)) json_error('Geçersiz rol.', 400);
+        if ($ad_soyad === '') json_error(__t('kullanici.name_required'), 400);
+        if (mb_strlen($ad_soyad) > 100) json_error(__t('kullanici.name_max_length'), 400);
+        if ($email === '') json_error(__t('auth.email_required'), 400);
+        if (mb_strlen($email) > 255) json_error(__t('kullanici.email_max_length'), 400);
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) json_error(__t('auth.invalid_email'), 400);
+        if ($sifre === '') json_error(__t('auth.password_required'), 400);
+        if (mb_strlen($sifre) < 8) json_error(__t('auth.password_min_length'), 400);
+        if (mb_strlen($sifre) > 128) json_error(__t('auth.password_max_length'), 400);
+        if (!in_array($rol, ['admin', 'kullanici'], true)) json_error(__t('auth.invalid_role'), 400);
         if ($telefon !== '' && !preg_match('/^\+?[0-9\s\-()]{7,20}$/', $telefon)) {
-            json_error('Geçerli bir telefon numarası giriniz.', 400);
+            json_error(__t('isletme.invalid_phone'), 400);
         }
 
         $pdo  = get_db();
@@ -182,7 +182,7 @@ function register_kullanicilar_routes(Router $router): void {
             $stmt->execute([$id, $ad_soyad, $email, $hash, $rol, $telefon ?: null]);
         } catch (PDOException $e) {
             if ($e->errorInfo[1] == 1062) {
-                json_error('Bu email zaten kullanılıyor.', 409);
+                json_error(__t('auth.email_already_used'), 409);
             }
             throw $e;
         }
@@ -206,15 +206,15 @@ function register_kullanicilar_routes(Router $router): void {
         $stmt = $pdo->prepare('SELECT * FROM kullanicilar WHERE id = ? AND aktif = 1');
         $stmt->execute([$id]);
         $user = $stmt->fetch();
-        if (!$user) json_error('Kullanıcı bulunamadı.', 404);
+        if (!$user) json_error(__t('kullanici.not_found'), 404);
 
         // Kendini koruma
         if ($id === $me) {
             if (isset($body['rol']) && $body['rol'] !== 'admin') {
-                json_error('Kendi admin rolünüzü değiştiremezsiniz.', 403);
+                json_error(__t('auth.cannot_change_own_role'), 403);
             }
             if (isset($body['aktif']) && !(bool)(int)$body['aktif']) {
-                json_error('Kendinizi pasif yapamazsınız.', 403);
+                json_error(__t('auth.cannot_deactivate_self'), 403);
             }
         }
 
@@ -236,31 +236,31 @@ function register_kullanicilar_routes(Router $router): void {
         // Şifre güncelleme
         if (!empty($body['sifre'])) {
             $sifre = $body['sifre'];
-            if (mb_strlen($sifre) < 8) json_error('Şifre en az 8 karakter olmalıdır.', 400);
-            if (mb_strlen($sifre) > 128) json_error('Şifre en fazla 128 karakter olabilir.', 400);
+            if (mb_strlen($sifre) < 8) json_error(__t('auth.password_min_length'), 400);
+            if (mb_strlen($sifre) > 128) json_error(__t('auth.password_max_length'), 400);
             $fields[] = 'password_hash = ?';
             $params[] = password_hash($sifre, PASSWORD_BCRYPT, ['cost' => 10]);
         }
 
-        if (empty($fields)) json_error('Güncellenecek alan bulunamadı.', 400);
+        if (empty($fields)) json_error(__t('general.no_fields_to_update'), 400);
 
         // Validasyonlar
         if (isset($body['ad_soyad']) && mb_strlen($body['ad_soyad']) > 100) {
-            json_error('Ad soyad en fazla 100 karakter olabilir.', 400);
+            json_error(__t('kullanici.name_max_length'), 400);
         }
         if (isset($body['email'])) {
             if (!filter_var($body['email'], FILTER_VALIDATE_EMAIL)) {
-                json_error('Geçerli bir email adresi giriniz.', 400);
+                json_error(__t('auth.invalid_email'), 400);
             }
             if (mb_strlen($body['email']) > 255) {
-                json_error('Email en fazla 255 karakter olabilir.', 400);
+                json_error(__t('kullanici.email_max_length'), 400);
             }
         }
         if (isset($body['rol']) && !in_array($body['rol'], ['admin', 'kullanici'], true)) {
-            json_error('Geçersiz rol.', 400);
+            json_error(__t('auth.invalid_role'), 400);
         }
         if (isset($body['telefon']) && $body['telefon'] !== '' && !preg_match('/^\+?[0-9\s\-()]{7,20}$/', $body['telefon'])) {
-            json_error('Geçerli bir telefon numarası giriniz.', 400);
+            json_error(__t('isletme.invalid_phone'), 400);
         }
 
         $params[] = $id;
@@ -271,7 +271,7 @@ function register_kullanicilar_routes(Router $router): void {
             $stmt->execute($params);
         } catch (PDOException $e) {
             if ($e->errorInfo[1] == 1062) {
-                json_error('Bu email zaten kullanılıyor.', 409);
+                json_error(__t('auth.email_already_used'), 409);
             }
             throw $e;
         }
@@ -290,16 +290,16 @@ function register_kullanicilar_routes(Router $router): void {
         $id  = $req['params']['id'];
         $me  = $req['user']['id'];
 
-        if ($id === $me) json_error('Kendinizi silemezsiniz.', 403);
+        if ($id === $me) json_error(__t('auth.cannot_delete_self'), 403);
 
         $stmt = $pdo->prepare('SELECT id FROM kullanicilar WHERE id = ? AND aktif = 1');
         $stmt->execute([$id]);
-        if (!$stmt->fetch()) json_error('Kullanıcı bulunamadı.', 404);
+        if (!$stmt->fetch()) json_error(__t('kullanici.not_found'), 404);
 
         $stmt = $pdo->prepare('UPDATE kullanicilar SET aktif = 0 WHERE id = ?');
         $stmt->execute([$id]);
 
-        json_response(['mesaj' => 'Kullanıcı pasife alındı.']);
+        json_response(['mesaj' => __t('kullanici.deactivated')]);
     }, $mw);
 
     // POST /api/kullanicilar/:id/isletme — İşletme atama
@@ -309,17 +309,17 @@ function register_kullanicilar_routes(Router $router): void {
         $body       = $req['body'];
         $isletme_id = $body['isletme_id'] ?? null;
 
-        if (!$isletme_id) json_error('isletme_id zorunludur.', 400);
+        if (!$isletme_id) json_error(__t('general.isletme_id_required'), 400);
 
         // Kullanıcı var mı?
         $stmt = $pdo->prepare('SELECT id FROM kullanicilar WHERE id = ? AND aktif = 1');
         $stmt->execute([$id]);
-        if (!$stmt->fetch()) json_error('Kullanıcı bulunamadı.', 404);
+        if (!$stmt->fetch()) json_error(__t('kullanici.not_found'), 404);
 
         // İşletme var mı?
         $stmt = $pdo->prepare('SELECT id FROM isletmeler WHERE id = ? AND aktif = 1');
         $stmt->execute([$isletme_id]);
-        if (!$stmt->fetch()) json_error('İşletme bulunamadı.', 404);
+        if (!$stmt->fetch()) json_error(__t('isletme.not_found'), 404);
 
         $defaultYetkiler = json_encode([
             'urun' => ['goruntule' => true, 'ekle' => false, 'duzenle' => false, 'sil' => false],
@@ -359,7 +359,7 @@ function register_kullanicilar_routes(Router $router): void {
         );
         $stmt->execute([$id, $isletme_id]);
 
-        json_response(['mesaj' => 'İşletme ataması kaldırıldı.']);
+        json_response(['mesaj' => __t('kullanici.isletme_removed')]);
     }, $mw);
 
     // GET /api/kullanicilar/:id/yetkiler — Yetkileri getir
@@ -368,7 +368,7 @@ function register_kullanicilar_routes(Router $router): void {
         $id         = $req['params']['id'];
         $isletme_id = $req['query']['isletme_id'] ?? null;
 
-        if (!$isletme_id) json_error('isletme_id query parametresi zorunludur.', 400);
+        if (!$isletme_id) json_error(__t('general.isletme_id_query_required'), 400);
 
         $stmt = $pdo->prepare(
             'SELECT ki.yetkiler, ki.rol_id, r.ad AS rol_adi
@@ -379,7 +379,7 @@ function register_kullanicilar_routes(Router $router): void {
         $stmt->execute([$id, $isletme_id]);
         $row = $stmt->fetch();
 
-        if (!$row) json_error('Bu kullanıcı-işletme ataması bulunamadı.', 404);
+        if (!$row) json_error(__t('kullanici.isletme_not_found'), 404);
 
         $row['yetkiler'] = json_decode($row['yetkiler'], true);
         json_response($row);
@@ -394,8 +394,8 @@ function register_kullanicilar_routes(Router $router): void {
         $yetkiler   = $body['yetkiler'] ?? null;
         $rol_id     = $body['rol_id'] ?? null;
 
-        if (!$isletme_id) json_error('isletme_id zorunludur.', 400);
-        if ($yetkiler === null) json_error('yetkiler zorunludur.', 400);
+        if (!$isletme_id) json_error(__t('general.isletme_id_required'), 400);
+        if ($yetkiler === null) json_error(__t('general.yetkiler_required'), 400);
 
         $yetkilerJson = json_encode($yetkiler, JSON_UNESCAPED_UNICODE);
 
@@ -446,11 +446,11 @@ function register_kullanicilar_routes(Router $router): void {
 
         $stmt = $pdo->prepare('SELECT id FROM kullanicilar WHERE id = ? AND aktif = 0');
         $stmt->execute([$id]);
-        if (!$stmt->fetch()) json_error('Silinmiş kullanıcı bulunamadı.', 404);
+        if (!$stmt->fetch()) json_error(__t('kullanici.deleted_not_found'), 404);
 
         $stmt = $pdo->prepare('UPDATE kullanicilar SET aktif = 1 WHERE id = ?');
         $stmt->execute([$id]);
 
-        json_response(['mesaj' => 'Kullanıcı geri alındı.']);
+        json_response(['mesaj' => __t('kullanici.restored')]);
     }, $mw);
 }

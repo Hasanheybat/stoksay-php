@@ -12,6 +12,7 @@ import 'package:excel/excel.dart' as xl;
 import '../services/sayim_service.dart';
 import '../widgets/bildirim.dart';
 import 'app_layout.dart';
+import '../providers/language_provider.dart';
 
 const _P = Color(0xFF6C53F5);
 const _PL = Color(0x1A6C53F5);
@@ -118,16 +119,16 @@ class _SayimDetayScreenState extends ConsumerState<SayimDetayScreen> {
 
   Future<void> _handleTamamla() async {
     if (_kalemler.isEmpty) {
-      _showSnack('Sayıma en az 1 ürün ekleyin.', basarili: false);
+      _showSnack(t('app.add_min_one_product'), basarili: false);
       return;
     }
     setState(() => _tamamlaniyor = true);
     try {
       await SayimService.tamamla(widget.sayimId);
-      _showSnack('Sayım tamamlandı!');
+      _showSnack(t('app.count_completed'));
       if (mounted) context.pop(true);
     } catch (e) {
-      _showSnack('Sayım tamamlanamadı.', basarili: false);
+      _showSnack(t('app.count_complete_failed'), basarili: false);
     }
     setState(() => _tamamlaniyor = false);
   }
@@ -136,15 +137,15 @@ class _SayimDetayScreenState extends ConsumerState<SayimDetayScreen> {
     try {
       await SayimService.kalemSil(widget.sayimId, kalemId);
       setState(() => _kalemler.removeWhere((k) => k['id'] == kalemId));
-      _showSnack('Kalem silindi.', tip: BildirimTip.hata);
+      _showSnack(t('app.item_deleted'), tip: BildirimTip.hata);
     } catch (e) {
-      _showSnack('Kalem silinemedi.', basarili: false);
+      _showSnack(t('app.item_delete_failed'), basarili: false);
     }
   }
 
   Future<void> _handleGuncelle(dynamic kalemId, String yeniMiktar) async {
     if (yeniMiktar.isEmpty) {
-      _showSnack('Miktar girin.', basarili: false);
+      _showSnack(t('app.enter_quantity'), basarili: false);
       return;
     }
     try {
@@ -157,16 +158,16 @@ class _SayimDetayScreenState extends ConsumerState<SayimDetayScreen> {
           return k;
         }).toList();
       });
-      _showSnack('Miktar güncellendi.', tip: BildirimTip.bilgi);
+      _showSnack(t('app.quantity_updated'), tip: BildirimTip.bilgi);
     } catch (e) {
-      _showSnack('Güncelleme başarısız.', basarili: false);
+      _showSnack(t('app.update_failed_short'), basarili: false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return AppLayout(
-      pageTitle: 'Sayım Detay',
+      pageTitle: t('app.count_detail_title'),
       showBack: true,
       child: Column(
         children: [
@@ -202,7 +203,7 @@ class _SayimDetayScreenState extends ConsumerState<SayimDetayScreen> {
                     child: TextField(
                       onChanged: (val) => setState(() => _aramaMetni = val),
                       decoration: InputDecoration(
-                        hintText: 'Ara...',
+                        hintText: t('app.search_hint'),
                         hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)),
                         prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF9CA3AF)),
                         prefixIconConstraints: const BoxConstraints(minWidth: 36),
@@ -227,7 +228,7 @@ class _SayimDetayScreenState extends ConsumerState<SayimDetayScreen> {
                   GestureDetector(
                     onTap: () {
                       if (_kalemler.isEmpty) {
-                        _showSnack('Sayıma en az 1 ürün ekleyin.', basarili: false);
+                        _showSnack(t('app.add_min_one_product'), basarili: false);
                         return;
                       }
                       _showTamamlaOnay();
@@ -238,13 +239,13 @@ class _SayimDetayScreenState extends ConsumerState<SayimDetayScreen> {
                         color: const Color(0xFFECFDF5),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.check_circle, size: 14, color: Color(0xFF059669)),
-                          SizedBox(width: 4),
-                          Text('Tamamla',
-                              style: TextStyle(
+                          const Icon(Icons.check_circle, size: 14, color: Color(0xFF059669)),
+                          const SizedBox(width: 4),
+                          Text(t('app.complete_btn'),
+                              style: const TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,
                                   color: Color(0xFF059669))),
@@ -291,7 +292,7 @@ class _SayimDetayScreenState extends ConsumerState<SayimDetayScreen> {
                         child: Padding(
                           padding: const EdgeInsets.only(top: 48),
                           child: Text(
-                            _aramaMetni.isNotEmpty ? 'Sonuç bulunamadı.' : (_devam ? 'Henüz ürün eklenmedi.' : 'Bu sayımda kalem bulunmuyor.'),
+                            _aramaMetni.isNotEmpty ? t('app.no_result') : (_devam ? t('app.no_product_added') : t('app.no_items_in_count')),
                             style: const TextStyle(fontSize: 14, color: Color(0xFF9CA3AF)),
                           ),
                         ),

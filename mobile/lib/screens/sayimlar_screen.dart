@@ -11,6 +11,7 @@ import '../services/sayim_service.dart';
 import '../services/depo_service.dart';
 import '../widgets/bildirim.dart';
 import 'app_layout.dart';
+import '../providers/language_provider.dart';
 
 const _P = Color(0xFF6C53F5);
 const _PL = Color(0x1A6C53F5);
@@ -103,7 +104,7 @@ class _SayimlarScreenState extends ConsumerState<SayimlarScreen> {
         onSilindi: () {
           if (_seciliIsletmeId != null) _fetchSayimlar(_seciliIsletmeId!);
           if (mounted) {
-            showBildirim(context, 'Sayım silindi', tip: BildirimTip.hata);
+            showBildirim(context, t('app.count_deleted'), tip: BildirimTip.hata);
           }
         },
       ),
@@ -113,7 +114,7 @@ class _SayimlarScreenState extends ConsumerState<SayimlarScreen> {
   @override
   Widget build(BuildContext context) {
     return AppLayout(
-      pageTitle: 'Sayımlar',
+      pageTitle: t('ui.counts'),
       showBack: true,
       onHeaderAction: _toplamaMode ? null : () => setState(() => _menuAcik = !_menuAcik),
       headerActionIcon: _menuAcik ? Icons.close : Icons.add,
@@ -143,12 +144,12 @@ class _SayimlarScreenState extends ConsumerState<SayimlarScreen> {
                             color: const Color(0xFFFEF2F2),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.close, size: 14, color: Color(0xFFEF4444)),
-                              SizedBox(width: 4),
-                              Text('İptal', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFFEF4444))),
+                              const Icon(Icons.close, size: 14, color: Color(0xFFEF4444)),
+                              const SizedBox(width: 4),
+                              Text(t('ui.cancel'), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFFEF4444))),
                             ],
                           ),
                         ),
@@ -179,7 +180,7 @@ class _SayimlarScreenState extends ConsumerState<SayimlarScreen> {
                             children: [
                               Icon(Icons.calculate, size: 14, color: _seciliSayimlar.length >= 2 ? Colors.white : const Color(0xFF9CA3AF)),
                               const SizedBox(width: 4),
-                              Text('Topla', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _seciliSayimlar.length >= 2 ? Colors.white : const Color(0xFF9CA3AF))),
+                              Text(t('app.collect_btn'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _seciliSayimlar.length >= 2 ? Colors.white : const Color(0xFF9CA3AF))),
                             ],
                           ),
                         ),
@@ -233,7 +234,7 @@ class _SayimlarScreenState extends ConsumerState<SayimlarScreen> {
             child: Row(
               children: [
                 _FilterChip(
-                  label: 'Tümü',
+                  label: t('app.count_filter_all'),
                   active: _aktifFiltre == 'hepsi',
                   onTap: () => setState(() => _aktifFiltre = 'hepsi'),
                 ),
@@ -285,16 +286,16 @@ class _SayimlarScreenState extends ConsumerState<SayimlarScreen> {
                     ),
                   )
                 : _isletmeler.isEmpty
-                    ? const _EmptyState(
+                    ? _EmptyState(
                         icon: Icons.business,
-                        title: 'Atanmış işletme yok',
-                        subtitle: 'Yöneticinizle iletişime geçin',
+                        title: t('app.no_assigned_business'),
+                        subtitle: t('app.contact_admin'),
                       )
                     : _gosterilenSayimlar.isEmpty
                         ? _EmptyState(
                             icon: Icons.assignment,
-                            title: _aktifFiltre == 'hepsi' ? 'Henüz sayım yok' : 'Sayım bulunamadı',
-                            subtitle: _aktifFiltre == 'hepsi' ? '+ butonuna basarak yeni sayım başlatın' : null,
+                            title: _aktifFiltre == 'hepsi' ? t('app.no_count_yet') : t('app.count_not_found'),
+                            subtitle: _aktifFiltre == 'hepsi' ? t('app.add_count_hint') : null,
                           )
                         : ListView.builder(
                             padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
@@ -313,7 +314,7 @@ class _SayimlarScreenState extends ConsumerState<SayimlarScreen> {
                                       GestureDetector(
                                         onTap: () {
                                           if (!isTamamlandi) {
-                                            showBildirim(context, 'Sadece tamamlanmış sayımlar toplanabilir.', basarili: false);
+                                            showBildirim(context, t('app.only_completed_merge'), basarili: false);
                                             return;
                                           }
                                           setState(() {
@@ -357,7 +358,7 @@ class _SayimlarScreenState extends ConsumerState<SayimlarScreen> {
                                           onTap: _toplamaMode
                                               ? () {
                                                   if (!isTamamlandi) {
-                                                    showBildirim(context, 'Sadece tamamlanmış sayımlar toplanabilir.', basarili: false);
+                                                    showBildirim(context, t('app.only_completed_merge'), basarili: false);
                                                     return;
                                                   }
                                                   setState(() {
@@ -424,12 +425,12 @@ class _SayimlarScreenState extends ConsumerState<SayimlarScreen> {
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.note_add_outlined, size: 16, color: _P),
-                              SizedBox(width: 10),
-                              Text('Sayım Ekle', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF374151))),
+                              const Icon(Icons.note_add_outlined, size: 16, color: _P),
+                              const SizedBox(width: 10),
+                              Text(t('app.add_count'), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF374151))),
                             ],
                           ),
                         ),
@@ -446,12 +447,12 @@ class _SayimlarScreenState extends ConsumerState<SayimlarScreen> {
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(Icons.calculate, size: 16, color: Color(0xFF10B981)),
-                              SizedBox(width: 10),
-                              Text('Sayım Topla', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF374151))),
+                              const Icon(Icons.calculate, size: 16, color: Color(0xFF10B981)),
+                              const SizedBox(width: 10),
+                              Text(t('app.collect_counts'), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF374151))),
                             ],
                           ),
                         ),
@@ -487,11 +488,11 @@ class _SayimlarScreenState extends ConsumerState<SayimlarScreen> {
               _toplamaMode = false;
               _seciliSayimlar.clear();
             });
-            showBildirim(context, 'Sayımlar toplandı!');
+            showBildirim(context, t('app.counts_collected'));
             _fetchSayimlar(_seciliIsletmeId!);
           } catch (e) {
             if (!mounted) return;
-            String hata = 'Toplama başarısız.';
+            String hata = t('app.collect_failed');
             if (e is DioException) {
               final data = e.response?.data;
               if (data is Map && data['hata'] != null) hata = data['hata'].toString();
@@ -1559,7 +1560,7 @@ class _EmptyState extends StatelessWidget {
   final String title;
   final String? subtitle;
 
-  const _EmptyState({required this.icon, required this.title, this.subtitle});
+  _EmptyState({required this.icon, required this.title, this.subtitle});
 
   @override
   Widget build(BuildContext context) {

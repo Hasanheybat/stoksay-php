@@ -6,6 +6,7 @@ import 'package:sqflite/sqflite.dart';
 import '../models/kullanici.dart';
 import '../services/auth_service.dart';
 import '../services/storage_service.dart';
+import '../services/language_service.dart';
 import '../db/database_helper.dart';
 
 class AuthState {
@@ -103,7 +104,7 @@ class AuthNotifier extends Notifier<AuthState> {
         state = AuthState(kullanici: cached['kullanici'], yetkilerMap: cached['yetkilerMap'], yukleniyor: false, cacheFallback: true);
       } else {
         await StorageService.removeToken();
-        state = AuthState(yukleniyor: false, hata: 'Oturum dogrulanamadi');
+        state = AuthState(yukleniyor: false, hata: LanguageService.t('app.session_invalid'));
       }
     }
   }
@@ -115,12 +116,12 @@ class AuthNotifier extends Notifier<AuthState> {
       await oturumKontrol();
       return true;
     } catch (e) {
-      String hata = 'Giris basarisiz';
+      String hata = LanguageService.t('app.login_failed');
       if (e is DioException && e.response != null) {
         final status = e.response?.statusCode;
-        if (status == 401) hata = 'Email veya sifre hatali';
-        if (status == 403) hata = 'Hesabiniz pasif durumdadir';
-        if (status == 429) hata = 'Cok fazla deneme. Lutfen bekleyin.';
+        if (status == 401) hata = LanguageService.t('app.wrong_credentials');
+        if (status == 403) hata = LanguageService.t('app.account_inactive');
+        if (status == 429) hata = LanguageService.t('app.too_many_attempts');
       }
       state = AuthState(yukleniyor: false, hata: hata);
       return false;

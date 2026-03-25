@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../providers/language_provider.dart';
 
 /// Aktif sayımda kullanılan depo/ürün silinmeye çalışıldığında gösterilen uyarı dialogu.
 /// Sync result dialog ile aynı tasarımda.
@@ -67,8 +68,8 @@ class AktifSayimDialog extends StatelessWidget {
             _badge('${sayimAdlari.length} aktif sayım', Colors.orange),
             const SizedBox(height: 16),
             // Sayım listesi
-            const Text(
-              'Kullanıldığı sayımlar:',
+            Text(
+              t('app.used_in_counts'),
               style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 8),
@@ -103,13 +104,13 @@ class AktifSayimDialog extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
               border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                Icon(Icons.info_outline, color: Colors.orange, size: 14),
-                SizedBox(width: 6),
+                const Icon(Icons.info_outline, color: Colors.orange, size: 14),
+                const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    'Önce sayımları tamamlayın veya silin.',
+                    t('app.complete_or_delete_first'),
                     style: TextStyle(color: Colors.orange, fontSize: 12, fontWeight: FontWeight.w500),
                   ),
                 ),
@@ -121,7 +122,7 @@ class AktifSayimDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Tamam', style: TextStyle(color: Colors.white)),
+          child: Text(t('app.ok'), style: const TextStyle(color: Colors.white)),
         ),
       ],
     );

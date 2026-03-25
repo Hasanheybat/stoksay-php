@@ -19,6 +19,7 @@ require_once $backendDir . '/vendor/autoload.php';
 require_once $backendDir . '/config/config.php';
 require_once $backendDir . '/config/database.php';
 require_once $backendDir . '/lib/helpers.php';
+require_once $backendDir . '/lib/i18n.php';
 require_once $backendDir . '/lib/router.php';
 
 // Middleware
@@ -80,6 +81,41 @@ $router->get('/health', function($req) {
     json_response(['status' => 'ok', 'timestamp' => date('c')]);
 });
 
+// ── i18n Routes ──
+$router->get('/languages', function($req) {
+    $i18n = I18n::getInstance();
+    json_response($i18n->getAvailableLanguages());
+});
+
+$router->get('/translations', function($req) {
+    $i18n = I18n::getInstance();
+    json_response($i18n->getAllTranslations());
+});
+
+$router->put('/user/language', function($req) {
+    $lang = $req['body']['lang'] ?? null;
+    $i18n = I18n::getInstance();
+
+    if (!$lang || !in_array($lang, $i18n->getSupportedLangs())) {
+        json_error(__t('general.validation_error'), 400);
+    }
+
+    $pdo = get_db();
+    $userId = $req['user']['id'];
+
+    // Mevcut ayarları al
+    $stmt = $pdo->prepare('SELECT ayarlar FROM kullanicilar WHERE id = ?');
+    $stmt->execute([$userId]);
+    $row = $stmt->fetch();
+    $ayarlar = $row && $row['ayarlar'] ? json_decode($row['ayarlar'], true) : [];
+    $ayarlar['dil'] = $lang;
+
+    $stmt = $pdo->prepare('UPDATE kullanicilar SET ayarlar = ? WHERE id = ?');
+    $stmt->execute([json_encode($ayarlar, JSON_UNESCAPED_UNICODE), $userId]);
+
+    json_response(['ok' => true, 'lang' => $lang]);
+}, [auth_guard()]);
+
 // Route'ları kaydet
 register_auth_routes($router);
 register_isletmeler_routes($router);
@@ -95,5 +131,5 @@ register_sayimlar_routes($router);
 $matched = $router->dispatch($method, $path, $request);
 
 if (!$matched) {
-    json_error('Endpoint bulunamadı.', 404);
+    json_error(__t('general.endpoint_not_found'), 404);
 }

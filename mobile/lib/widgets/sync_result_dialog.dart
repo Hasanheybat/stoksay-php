@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../db/sync_service.dart';
+import '../providers/language_provider.dart';
 
 /// Senkronizasyon sonuçlarını gösteren dialog
 class SyncResultDialog extends StatelessWidget {
@@ -40,7 +41,7 @@ class SyncResultDialog extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Text(
-            bos ? 'Güncelleme' : 'Senkronizasyon',
+            bos ? t('app.update_label') : t('app.sync_label'),
             style: const TextStyle(color: Colors.white, fontSize: 18),
           ),
         ],
@@ -50,8 +51,8 @@ class SyncResultDialog extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (bos)
-            const Text(
-              'Bekleyen işlem yok. Veriler güncellendi.',
+            Text(
+              t('app.no_pending_ops'),
               style: TextStyle(color: Colors.white70, fontSize: 14),
             ),
           if (!bos) ...[
@@ -59,17 +60,17 @@ class SyncResultDialog extends StatelessWidget {
             Row(
               children: [
                 if (basarili)
-                  _badge('${result.basarili} başarılı', Colors.green),
+                  _badge('${result.basarili} ${t('app.successful')}', Colors.green),
                 if (basarili && basarisiz) const SizedBox(width: 8),
                 if (basarisiz)
-                  _badge('${result.basarisiz} başarısız', Colors.red),
+                  _badge('${result.basarisiz} ${t('app.failed')}', Colors.red),
               ],
             ),
             // Hata listesi
             if (result.hatalar.isNotEmpty) ...[
               const SizedBox(height: 16),
-              const Text(
-                'Başarısız işlemler:',
+              Text(
+                t('app.failed_operations'),
                 style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 8),
@@ -93,7 +94,7 @@ class SyncResultDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Tamam', style: TextStyle(color: Colors.white)),
+          child: Text(t('app.ok'), style: const TextStyle(color: Colors.white)),
         ),
       ],
     );

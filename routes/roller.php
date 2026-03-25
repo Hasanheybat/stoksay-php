@@ -16,7 +16,7 @@ function register_roller_routes(Router $router): void {
             json_response($rows ?: []);
         } catch (PDOException $e) {
             error_log('[roller] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard(), admin_guard()]);
 
@@ -27,7 +27,7 @@ function register_roller_routes(Router $router): void {
         $yetkiler = $body['yetkiler'] ?? null;
 
         if (!$ad || !trim($ad)) {
-            json_error('Rol adı zorunludur.', 400);
+            json_error(__t('rol.name_required'), 400);
         }
 
         $varsayilanYetkiler = [
@@ -53,10 +53,10 @@ function register_roller_routes(Router $router): void {
             json_response($row, 201);
         } catch (PDOException $e) {
             if ($e->errorInfo[1] == 1062) {
-                json_error('Bu rol adı zaten mevcut.', 409);
+                json_error(__t('rol.already_exists'), 409);
             }
             error_log('[roller] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard(), admin_guard()]);
 
@@ -70,7 +70,7 @@ function register_roller_routes(Router $router): void {
         $hasYetkiler = array_key_exists('yetkiler', $body);
 
         if (!$hasAd && !$hasYetkiler) {
-            json_error('Güncellenecek alan yok.', 400);
+            json_error(__t('general.no_fields_to_update'), 400);
         }
 
         try {
@@ -120,16 +120,16 @@ function register_roller_routes(Router $router): void {
             $row = $stmt->fetch();
 
             if (!$row) {
-                json_error('Rol bulunamadı.', 404);
+                json_error(__t('rol.not_found'), 404);
             }
 
             json_response($row);
         } catch (PDOException $e) {
             if ($e->errorInfo[1] == 1062) {
-                json_error('Bu rol adı zaten mevcut.', 409);
+                json_error(__t('rol.already_exists'), 409);
             }
             error_log('[roller] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard(), admin_guard()]);
 
@@ -150,7 +150,7 @@ function register_roller_routes(Router $router): void {
             json_response($rows ?: []);
         } catch (PDOException $e) {
             error_log('[roller] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard(), admin_guard()]);
 
@@ -166,11 +166,11 @@ function register_roller_routes(Router $router): void {
             $rolRow = $stmt->fetch();
 
             if (!$rolRow) {
-                json_error('Rol bulunamadı.', 404);
+                json_error(__t('rol.not_found'), 404);
             }
 
             if ((int)$rolRow['sistem']) {
-                json_error('"' . $rolRow['ad'] . '" sistem rolü silinemez.', 403);
+                json_error(__t('rol.system_cannot_delete', ['ad' => $rolRow['ad']]), 403);
             }
 
             $atamalar = $req['body']['atamalar'] ?? [];
@@ -219,10 +219,10 @@ function register_roller_routes(Router $router): void {
                 throw $txErr;
             }
 
-            json_response(['mesaj' => 'Rol silindi.']);
+            json_response(['mesaj' => __t('rol.deleted')]);
         } catch (PDOException $e) {
             error_log('[roller] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard(), admin_guard()]);
 }

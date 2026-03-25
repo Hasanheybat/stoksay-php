@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
+import '../providers/language_provider.dart';
 import '../widgets/bildirim.dart';
 import '../providers/isletme_provider.dart';
 
@@ -45,15 +46,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final email = _emailController.text.trim();
     final sifre = _sifreController.text.trim();
     if (email.isEmpty || sifre.isEmpty) {
-      _snackBar('Email ve sifre zorunludur.');
+      _snackBar(t('app.email_password_required'));
       return;
     }
     if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)) {
-      _snackBar('Gecerli bir email adresi giriniz.');
+      _snackBar(t('app.invalid_email'));
       return;
     }
     if (sifre.length < 8) {
-      _snackBar('Sifre en az 8 karakter olmalidir.');
+      _snackBar(t('app.password_min_length'));
       return;
     }
 
@@ -65,7 +66,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (mounted) context.go('/');
     } else if (mounted) {
       final hata = ref.read(authProvider).hata;
-      _snackBar(hata ?? 'Email veya sifre hatali.');
+      _snackBar(hata ?? t('app.wrong_credentials'));
       setState(() => _yukleniyor = false);
     }
   }
@@ -125,9 +126,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: const Icon(Icons.warehouse_rounded, color: Colors.white, size: 40),
                   ),
                   const SizedBox(height: 20),
-                  const Text('StokSay',
-                      style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: Colors.white)),
-                  Text('Depo Sayim Sistemi',
+                  Text(t('ui.app_name'),
+                      style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: Colors.white)),
+                  Text(t('ui.app_subtitle'),
                       style: TextStyle(fontSize: 14, color: Colors.white.withValues(alpha: 0.5), letterSpacing: 1)),
                   const SizedBox(height: 40),
 
@@ -143,24 +144,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Hos geldiniz',
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF111827))),
+                        Text(t('ui.welcome'),
+                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF111827))),
                         const SizedBox(height: 4),
-                        const Text('Hesabiniza giris yapin',
+                        Text(t('ui.sign_in_prompt'),
                             style: TextStyle(fontSize: 14, color: Color(0xFF9CA3AF))),
                         const SizedBox(height: 28),
 
-                        _label('E-POSTA'),
+                        _label(t('ui.email')),
                         const SizedBox(height: 8),
                         TextField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
                           textInputAction: TextInputAction.next,
-                          decoration: _inputDecoration('kullanici@ornek.com'),
+                          decoration: _inputDecoration(t('ui.email_placeholder')),
                         ),
                         const SizedBox(height: 16),
 
-                        _label('SIFRE'),
+                        _label(t('ui.password')),
                         const SizedBox(height: 8),
                         TextField(
                           controller: _sifreController,
@@ -203,14 +204,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       height: 24,
                                       child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
                                     )
-                                  : const Row(
+                                  : Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
-                                        Text('Giris Yap',
-                                            style: TextStyle(
+                                        Text(t('ui.sign_in'),
+                                            style: const TextStyle(
                                                 fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
-                                        SizedBox(width: 8),
-                                        Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+                                        const SizedBox(width: 8),
+                                        const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
                                       ],
                                     ),
                             ),

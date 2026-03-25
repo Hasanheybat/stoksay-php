@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
 import '../providers/connectivity_provider.dart';
+import '../providers/language_provider.dart';
 
 class AppLayout extends ConsumerWidget {
   final Widget child;
@@ -30,8 +31,10 @@ class AppLayout extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authProvider);
     final kullanici = auth.kullanici;
-    final ad = kullanici?.adSoyad ?? 'Kullanici';
-    final rol = kullanici?.rol == 'admin' ? 'Yonetici' : 'Depo Kullanicisi';
+    // Watch language provider to rebuild when language changes
+    ref.watch(languageProvider);
+    final ad = kullanici?.adSoyad ?? t('app.user');
+    final rol = kullanici?.rol == 'admin' ? t('app.admin') : t('app.warehouse_user');
 
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7FE),
@@ -203,7 +206,7 @@ class AppLayout extends ConsumerWidget {
                   Icon(Icons.wifi_off, color: Colors.orange.shade700, size: 14),
                   const SizedBox(width: 6),
                   Text(
-                    'ÇEVRİMDIŞI MOD',
+                    t('app.offline_mode_label'),
                     style: TextStyle(
                       color: Colors.orange.shade700,
                       fontSize: 11,

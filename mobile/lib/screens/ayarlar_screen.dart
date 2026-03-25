@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
 import '../providers/connectivity_provider.dart';
+import '../providers/language_provider.dart';
 import '../services/profil_service.dart';
+import '../services/language_service.dart';
 import '../widgets/bildirim.dart';
 import 'app_layout.dart';
 
@@ -37,12 +39,12 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
       // AuthProvider state'ini de güncelle (web app'teki setKullanici gibi)
       ref.read(authProvider.notifier).ayarlarGuncelle(Map<String, dynamic>.from(_ayarlar));
       if (mounted) {
-        showBildirim(context, 'Ayar kaydedildi', tip: BildirimTip.bilgi);
+        showBildirim(context, t('app.setting_saved'), tip: BildirimTip.bilgi);
       }
     } catch (e) {
       setState(() { _ayarlar = onceki; });
       if (mounted) {
-        showBildirim(context, 'Ayar kaydedilemedi', basarili: false);
+        showBildirim(context, t('app.setting_save_failed'), basarili: false);
       }
     }
   }
@@ -51,13 +53,13 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
   Widget build(BuildContext context) {
     final auth = ref.watch(authProvider);
     final kullanici = auth.kullanici;
-    final ad = kullanici?.adSoyad ?? 'Kullanıcı';
+    final ad = kullanici?.adSoyad ?? t('app.user');
     final email = kullanici?.email ?? '';
     final harf = ad.isNotEmpty ? ad[0].toUpperCase() : '?';
     _initAyarlar();
 
     return AppLayout(
-      pageTitle: 'Ayarlar',
+      pageTitle: t('ui.settings'),
       showBack: true,
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -135,8 +137,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                             children: [
                               Icon(Icons.shield, size: 12, color: const Color(0xFF6366F1)),
                               const SizedBox(width: 4),
-                              const Text(
-                                'Depo Kullanıcısı',
+                              Text(
+                                t('app.warehouse_user'),
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
@@ -175,7 +177,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
                     child: Text(
-                      'UYGULAMA AYARLARI',
+                      t('app.app_settings'),
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
@@ -190,8 +192,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                   _ToggleRow(
                     icon: Icons.flash_on,
                     gradColors: const [Color(0xFF6366F1), Color(0xFF8B5CF6)],
-                    title: 'Birim Otomatik Gelsin',
-                    subtitle: 'Açık: Birim direkt kaydedilir, onay gerekmez',
+                    title: t('app.auto_unit'),
+                    subtitle: t('app.auto_unit_desc'),
                     value: _ayarlar['birim_otomatik'] == true,
                     onChanged: (_) => _toggleAyar('birim_otomatik'),
                   ),
@@ -202,11 +204,112 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                   _ToggleRow(
                     icon: Icons.volume_up,
                     gradColors: const [Color(0xFF10B981), Color(0xFF059669)],
-                    title: 'Barkod Okuma Sesi',
-                    subtitle: 'Barkod okunduğunda bip sesi çıkar',
+                    title: t('app.barcode_sound'),
+                    subtitle: t('app.barcode_sound_desc'),
                     value: _ayarlar['barkod_sesi'] != false,
                     onChanged: (_) => _toggleAyar('barkod_sesi'),
                   ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Dil Secimi
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
+                    child: Text(
+                      t('ui.language').toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF9CA3AF),
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ),
+                  const Divider(height: 1, color: Color(0xFFF3F4F6)),
+                  ...LanguageService.availableLanguages.entries.map((entry) {
+                    final langCode = entry.key;
+                    final langName = entry.value;
+                    final isSelected = ref.watch(languageProvider).currentLanguage == langCode;
+                    final isLoading = ref.watch(languageProvider).loading;
+                    return GestureDetector(
+                      onTap: isLoading ? null : () async {
+                        if (isSelected) return;
+                        await ref.read(languageProvider.notifier).changeLanguage(langCode);
+                        if (mounted) {
+                          showBildirim(context, t('app.language_changed'), tip: BildirimTip.bilgi);
+                          setState(() {}); // Rebuild to update all text
+                        }
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: isSelected
+                                      ? const [Color(0xFF6366F1), Color(0xFF8B5CF6)]
+                                      : const [Color(0xFFE5E7EB), Color(0xFFD1D5DB)],
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  langCode.toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    color: isSelected ? Colors.white : const Color(0xFF6B7280),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                langName,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                  color: isSelected ? const Color(0xFF1F2937) : const Color(0xFF6B7280),
+                                ),
+                              ),
+                            ),
+                            if (isSelected)
+                              Container(
+                                width: 20,
+                                height: 20,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF6366F1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(Icons.check, color: Colors.white, size: 12),
+                              ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
                 ],
               ),
             ),
@@ -231,7 +334,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'UYGULAMA',
+                    t('app.application'),
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
@@ -243,7 +346,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Versiyon', style: TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
+                      Text(t('app.version_label'), style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
                       const Text('v2.0.0', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF374151))),
                     ],
                   ),
@@ -251,7 +354,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Sistem', style: TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
+                      Text(t('app.system_label'), style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280))),
                       Row(
                         children: [
                           Container(
@@ -263,7 +366,7 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                             ),
                           ),
                           const SizedBox(width: 6),
-                          const Text('Aktif', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF059669))),
+                          Text(t('ui.active'), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF059669))),
                         ],
                       ),
                     ],
@@ -279,22 +382,22 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
               final isOffline = ref.watch(connectivityProvider).offlineMode;
               return GestureDetector(
               onTap: isOffline ? () {
-                showBildirim(context, 'Çevrimdışı modda çıkış yapamazsınız. Önce verileri senkronize edin.', tip: BildirimTip.hata);
+                showBildirim(context, t('app.offline_no_logout'), tip: BildirimTip.hata);
               } : () async {
                 final confirmed = await showDialog<bool>(
                   context: context,
                   builder: (ctx) => AlertDialog(
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    title: const Text('Çıkış Yap'),
-                    content: const Text('Oturumunuzu kapatmak istediğinize emin misiniz?'),
+                    title: Text(t('ui.sign_out')),
+                    content: Text(t('app.confirm_logout')),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(ctx, false),
-                        child: const Text('İptal'),
+                        child: Text(t('ui.cancel')),
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(ctx, true),
-                        child: const Text('Çıkış Yap', style: TextStyle(color: Colors.red)),
+                        child: Text(t('ui.sign_out'), style: const TextStyle(color: Colors.red)),
                       ),
                     ],
                   ),
@@ -326,13 +429,13 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                   ),
                   child: Column(
                     children: [
-                      const Row(
+                      Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.logout, color: Colors.white, size: 18),
-                          SizedBox(width: 8),
+                          const Icon(Icons.logout, color: Colors.white, size: 18),
+                          const SizedBox(width: 8),
                           Text(
-                            'Çıkış Yap',
+                            t('ui.sign_out'),
                             style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w700,
@@ -343,8 +446,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
                       ),
                       if (isOffline) ...[
                         const SizedBox(height: 4),
-                        const Text(
-                          'Çevrimdışı modda çıkış yapılamaz',
+                        Text(
+                          t('app.offline_no_logout_short'),
                           style: TextStyle(color: Colors.white70, fontSize: 11),
                         ),
                       ],
@@ -357,8 +460,8 @@ class _AyarlarScreenState extends ConsumerState<AyarlarScreen> {
 
             const SizedBox(height: 12),
 
-            const Text(
-              'StokSay Depo Sayım Sistemi',
+            Text(
+              t('app.app_system_name'),
               style: TextStyle(fontSize: 12, color: Color(0xFFD1D5DB)),
             ),
 

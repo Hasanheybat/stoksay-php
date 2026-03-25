@@ -82,7 +82,7 @@ function register_profil_routes(Router $router): void {
         $userId  = $req['user']['id'];
         $ayarlar = $req['body']['ayarlar'] ?? null;
 
-        if ($ayarlar === null) json_error('ayarlar zorunludur.', 400);
+        if ($ayarlar === null) json_error(__t('general.ayarlar_required'), 400);
 
         $ayarlarJson = json_encode($ayarlar, JSON_UNESCAPED_UNICODE);
 

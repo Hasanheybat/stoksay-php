@@ -14,10 +14,10 @@ function register_auth_routes(Router $router): void {
         $email = $body['email'] ?? null;
 
         if (!$email || !$pass) {
-            json_error('Email ve şifre zorunludur.', 400);
+            json_error(__t('auth.email_password_required'), 400);
         }
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            json_error('Geçerli bir email adresi giriniz.', 400);
+            json_error(__t('auth.invalid_email'), 400);
         }
 
         $pdo = get_db();
@@ -26,13 +26,13 @@ function register_auth_routes(Router $router): void {
         $user = $stmt->fetch();
 
         if (!$user) {
-            json_error('Geçersiz email veya şifre.', 401);
+            json_error(__t('auth.invalid_credentials'), 401);
         }
         if (!(bool)(int)$user['aktif']) {
-            json_error('Hesabınız pasif durumdadır.', 403);
+            json_error(__t('auth.account_inactive'), 403);
         }
         if (!password_verify($pass, $user['password_hash'])) {
-            json_error('Geçersiz email veya şifre.', 401);
+            json_error(__t('auth.invalid_credentials'), 401);
         }
 
         $payload = [
@@ -73,9 +73,9 @@ function register_auth_routes(Router $router): void {
     // PUT /api/auth/update-email
     $router->put('/auth/update-email', function($req) {
         $email = $req['body']['email'] ?? null;
-        if (!$email) json_error('Email zorunludur.', 400);
+        if (!$email) json_error(__t('auth.email_required'), 400);
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            json_error('Geçerli bir email adresi giriniz.', 400);
+            json_error(__t('auth.invalid_email'), 400);
         }
 
         $pdo = get_db();
@@ -85,9 +85,9 @@ function register_auth_routes(Router $router): void {
             json_response(['ok' => true]);
         } catch (PDOException $e) {
             if ($e->errorInfo[1] == 1062) {
-                json_error('Bu email zaten kullanılıyor.', 409);
+                json_error(__t('auth.email_already_used'), 409);
             }
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard(), rate_limit_middleware('auth', $config['rate_limits']['auth']['max'], $config['rate_limits']['auth']['window'])]);
 
@@ -97,17 +97,17 @@ function register_auth_routes(Router $router): void {
         $eski = $body['eskiSifre'] ?? null;
         $yeni = $body['yeniSifre'] ?? null;
 
-        if (!$eski || !$yeni) json_error('Eski ve yeni şifre zorunludur.', 400);
-        if (strlen($yeni) < 8) json_error('Yeni şifre en az 8 karakter olmalıdır.', 400);
+        if (!$eski || !$yeni) json_error(__t('auth.old_new_password_required'), 400);
+        if (strlen($yeni) < 8) json_error(__t('auth.password_min_length'), 400);
 
         $pdo = get_db();
         $stmt = $pdo->prepare('SELECT password_hash FROM kullanicilar WHERE id = ?');
         $stmt->execute([$req['user']['id']]);
         $row = $stmt->fetch();
 
-        if (!$row) json_error('Kullanıcı bulunamadı.', 404);
+        if (!$row) json_error(__t('auth.user_not_found'), 404);
         if (!password_verify($eski, $row['password_hash'])) {
-            json_error('Mevcut şifre hatalı.', 401);
+            json_error(__t('auth.current_password_wrong'), 401);
         }
 
         $hash = password_hash($yeni, PASSWORD_BCRYPT, ['cost' => 10]);

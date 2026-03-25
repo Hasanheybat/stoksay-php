@@ -56,7 +56,7 @@ function register_isletmeler_routes(Router $router): void {
             json_response($data);
         } catch (PDOException $e) {
             error_log('[isletmeler] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard(), admin_guard()]);
 
@@ -69,13 +69,13 @@ function register_isletmeler_routes(Router $router): void {
             $row = $stmt->fetch();
 
             if (!$row) {
-                json_error('İşletme bulunamadı.', 404);
+                json_error(__t('isletme.not_found'), 404);
             }
 
             json_response($row);
         } catch (PDOException $e) {
             error_log('[isletmeler] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard(), admin_guard()]);
 
@@ -88,13 +88,13 @@ function register_isletmeler_routes(Router $router): void {
         $telefon = $body['telefon'] ?? null;
 
         if (!$ad || !$kod) {
-            json_error('Ad ve kod zorunludur.', 400);
+            json_error(__t('isletme.code_required'), 400);
         }
-        if (mb_strlen($ad) > 255) json_error('Ad en fazla 255 karakter olabilir.', 400);
-        if (mb_strlen($kod) > 50)  json_error('Kod en fazla 50 karakter olabilir.', 400);
-        if ($adres && mb_strlen($adres) > 500) json_error('Adres en fazla 500 karakter olabilir.', 400);
+        if (mb_strlen($ad) > 255) json_error(__t('isletme.name_max_length'), 400);
+        if (mb_strlen($kod) > 50)  json_error(__t('isletme.code_max_length'), 400);
+        if ($adres && mb_strlen($adres) > 500) json_error(__t('isletme.address_max_length'), 400);
         if ($telefon && !preg_match('/^[0-9+\-\s()]{7,20}$/', $telefon)) {
-            json_error('Geçerli bir telefon numarası giriniz.', 400);
+            json_error(__t('isletme.invalid_phone'), 400);
         }
 
         try {
@@ -113,10 +113,10 @@ function register_isletmeler_routes(Router $router): void {
             json_response($row, 201);
         } catch (PDOException $e) {
             if ($e->errorInfo[1] == 1062) {
-                json_error('Bu kod zaten kullanımda.', 409);
+                json_error(__t('isletme.already_exists'), 409);
             }
             error_log('[isletmeler] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard(), admin_guard()]);
 
@@ -126,7 +126,7 @@ function register_isletmeler_routes(Router $router): void {
 
         $telefon = $body['telefon'] ?? null;
         if ($telefon && !preg_match('/^[0-9+\-\s()]{7,20}$/', $telefon)) {
-            json_error('Geçerli bir telefon numarası giriniz.', 400);
+            json_error(__t('isletme.invalid_phone'), 400);
         }
 
         try {
@@ -141,7 +141,7 @@ function register_isletmeler_routes(Router $router): void {
             if (array_key_exists('aktif', $body))   { $fields[] = 'aktif = ?';   $params[] = $body['aktif'] ? 1 : 0; }
 
             if (!$fields) {
-                json_error('Güncellenecek alan yok.', 400);
+                json_error(__t('general.no_fields_to_update'), 400);
             }
 
             $params[] = $req['params']['id'];
@@ -156,13 +156,13 @@ function register_isletmeler_routes(Router $router): void {
             $row = $stmt->fetch();
 
             if (!$row) {
-                json_error('İşletme bulunamadı.', 404);
+                json_error(__t('isletme.not_found'), 404);
             }
 
             json_response($row);
         } catch (PDOException $e) {
             error_log('[isletmeler] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard(), admin_guard()]);
 
@@ -173,10 +173,10 @@ function register_isletmeler_routes(Router $router): void {
             $stmt = $pdo->prepare('UPDATE isletmeler SET aktif = 0 WHERE id = ?');
             $stmt->execute([$req['params']['id']]);
 
-            json_response(['mesaj' => 'İşletme pasife alındı.']);
+            json_response(['mesaj' => __t('isletme.deactivated')]);
         } catch (PDOException $e) {
             error_log('[isletmeler] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard(), admin_guard()]);
 
@@ -189,19 +189,19 @@ function register_isletmeler_routes(Router $router): void {
             $row = $stmt->fetch();
 
             if (!$row) {
-                json_error('İşletme bulunamadı.', 404);
+                json_error(__t('isletme.not_found'), 404);
             }
             if ((int)$row['aktif'] === 1) {
-                json_error('Bu işletme zaten aktif.', 400);
+                json_error(__t('isletme.already_active'), 400);
             }
 
             $stmt = $pdo->prepare('UPDATE isletmeler SET aktif = 1 WHERE id = ?');
             $stmt->execute([$req['params']['id']]);
 
-            json_response(['mesaj' => 'İşletme geri alındı.']);
+            json_response(['mesaj' => __t('isletme.restored')]);
         } catch (PDOException $e) {
             error_log('[isletmeler] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard(), admin_guard()]);
 }

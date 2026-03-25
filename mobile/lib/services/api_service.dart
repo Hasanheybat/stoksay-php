@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../config/api_config.dart';
 import 'storage_service.dart';
+import 'language_service.dart';
 
 class ApiService {
   static final Dio _dio = _createDio();
@@ -18,6 +19,7 @@ class ApiService {
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';
         }
+        options.headers['X-Language'] = LanguageService.currentLanguage;
         handler.next(options);
       },
       onError: (error, handler) async {

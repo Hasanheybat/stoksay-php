@@ -11,14 +11,14 @@ function auth_guard(): Closure {
         $header = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
 
         if (!$header || !preg_match('/^Bearer\s+(.+)$/i', $header, $m)) {
-            json_error('Oturum açılmamış.', 401);
+            json_error(__t('auth.not_logged_in'), 401);
             return false;
         }
 
         try {
             $payload = JWT::decode($m[1], new Key($config['jwt_secret'], 'HS256'));
         } catch (\Exception $e) {
-            json_error('Geçersiz veya süresi dolmuş token.', 401);
+            json_error(__t('auth.invalid_token'), 401);
             return false;
         }
 
@@ -29,12 +29,12 @@ function auth_guard(): Closure {
         $user = $stmt->fetch();
 
         if (!$user) {
-            json_error('Kullanıcı bulunamadı.', 401);
+            json_error(__t('auth.user_not_found'), 401);
             return false;
         }
 
         if (!(bool)(int)$user['aktif']) {
-            json_error('Hesabınız pasif durumdadır.', 403);
+            json_error(__t('auth.account_inactive'), 403);
             return false;
         }
 

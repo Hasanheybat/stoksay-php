@@ -19,7 +19,7 @@ function checkUrunYetki(array $req, string $islem): bool {
     $urun = $stmt->fetch();
 
     if (!$urun) {
-        json_error('Urun bulunamadi.', 404);
+        json_error(__t('urun.not_found'), 404);
         return false; // unreachable, json_error exits
     }
 
@@ -30,13 +30,13 @@ function checkUrunYetki(array $req, string $islem): bool {
     $row = $stmt->fetch();
 
     if (!$row) {
-        json_error('Bu isletmeye erisim yetkiniz yok.', 403);
+        json_error(__t('depo.no_access'), 403);
         return false;
     }
 
     $yetkiler = json_decode($row['yetkiler'], true);
     if (!($yetkiler['urun'][$islem] ?? false)) {
-        json_error("Urun $islem yetkiniz yok.", 403);
+        json_error(__t('urun.no_permission', ['islem' => $islem]), 403);
         return false;
     }
 
@@ -91,7 +91,7 @@ function register_urunler_routes(Router $router): void {
         $birim = $body['birim'] ?? null;
 
         if (!$urunAdi || !trim($urunAdi)) {
-            json_error('Isim 1 (sayim ismi) bos olamaz.', 400);
+            json_error(__t('urun.name_empty'), 400);
         }
 
         $kodGuncelle = ($urunKodu && trim($urunKodu)) ? trim($urunKodu) : null;
@@ -119,7 +119,7 @@ function register_urunler_routes(Router $router): void {
                 $cakisan = barkodBenzersizKontrol($pdo, $urunRow['isletme_id'], $barkodArr, $req['params']['id']);
                 if ($cakisan) {
                     $pdo->rollBack();
-                    json_error("\"{$cakisan['barkod']}\" barkodu \"{$cakisan['urunAdi']}\" urununne zaten tanimli.", 409);
+                    json_error(__t('urun.barcode_conflict', ['barkod' => $cakisan['barkod'], 'urunAdi' => $cakisan['urunAdi']]), 409);
                 }
             }
 
@@ -155,13 +155,13 @@ function register_urunler_routes(Router $router): void {
             $stmt = $pdo->prepare('SELECT * FROM isletme_urunler WHERE id = ?');
             $stmt->execute([$req['params']['id']]);
             $row = $stmt->fetch();
-            if (!$row) json_error('Urun bulunamadi.', 404);
+            if (!$row) json_error(__t('urun.not_found'), 404);
 
             json_response($row);
         } catch (\PDOException $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
             error_log('[PUT /urunler/:id] ' . $e->getMessage());
-            json_error('Sunucu hatasi.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard()]);
 
@@ -177,7 +177,7 @@ function register_urunler_routes(Router $router): void {
         $kategori = $body['kategori'] ?? null;
 
         if (!$isletmeId || !$urunAdi || !trim($urunAdi)) {
-            json_error('isletme_id ve urun_adi zorunludur.', 400);
+            json_error(__t('urun.id_name_required'), 400);
         }
 
         // Parse barkodlar
@@ -201,7 +201,7 @@ function register_urunler_routes(Router $router): void {
                 $cakisan = barkodBenzersizKontrol($pdo, $isletmeId, $barkodArr, null);
                 if ($cakisan) {
                     $pdo->rollBack();
-                    json_error("\"{$cakisan['barkod']}\" barkodu \"{$cakisan['urunAdi']}\" urununne zaten tanimli.", 409);
+                    json_error(__t('urun.barcode_conflict', ['barkod' => $cakisan['barkod'], 'urunAdi' => $cakisan['urunAdi']]), 409);
                 }
             }
 
@@ -232,10 +232,10 @@ function register_urunler_routes(Router $router): void {
         } catch (\PDOException $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
             if (isset($e->errorInfo[1]) && $e->errorInfo[1] == 1062) {
-                json_error('Bu urun kodu bu isletmede zaten var.', 409);
+                json_error(__t('urun.code_exists'), 409);
             }
             error_log('[POST /urunler] ' . $e->getMessage());
-            json_error('Sunucu hatasi.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard(), yetki_guard('urun', 'ekle', 'body')]);
 
@@ -259,7 +259,7 @@ function register_urunler_routes(Router $router): void {
             if (count($aktifSayimlar) > 0) {
                 $pdo->rollBack();
                 json_response([
-                    'hata' => 'Bu urun aktif sayimlarda kullaniliyor.',
+                    'hata' => __t('urun.active_counts_exist'),
                     'sayimlar' => array_column($aktifSayimlar, 'ad'),
                 ], 409);
             }
@@ -268,11 +268,11 @@ function register_urunler_routes(Router $router): void {
             $stmt->execute([$req['params']['id']]);
 
             $pdo->commit();
-            json_response(['mesaj' => 'Urun silindi.']);
+            json_response(['mesaj' => __t('urun.deleted')]);
         } catch (\PDOException $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
             error_log('[DELETE /urunler/:id] ' . $e->getMessage());
-            json_error('Sunucu hatasi.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard()]);
 
@@ -284,16 +284,16 @@ function register_urunler_routes(Router $router): void {
             $stmt->execute([$req['params']['id']]);
             $row = $stmt->fetch();
 
-            if (!$row) json_error('Urun bulunamadi.', 404);
-            if ((int)$row['aktif'] === 1) json_error('Bu urun zaten aktif.', 400);
+            if (!$row) json_error(__t('urun.not_found'), 404);
+            if ((int)$row['aktif'] === 1) json_error(__t('urun.already_active'), 400);
 
             $stmt = $pdo->prepare('UPDATE isletme_urunler SET aktif = 1, son_guncelleme = NOW() WHERE id = ?');
             $stmt->execute([$req['params']['id']]);
 
-            json_response(['mesaj' => 'Urun geri alindi.']);
+            json_response(['mesaj' => __t('urun.restored')]);
         } catch (\PDOException $e) {
             error_log('[PUT /urunler/:id/restore] ' . $e->getMessage());
-            json_error('Sunucu hatasi.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard(), admin_guard()]);
 
@@ -306,7 +306,7 @@ function register_urunler_routes(Router $router): void {
             // But since our router stops at first match, we handle admin here too.
             // So we implement both in one handler.
             $isletmeId = $req['query']['isletme_id'] ?? null;
-            if (!$isletmeId) json_error('isletme_id zorunludur.', 400);
+            if (!$isletmeId) json_error(__t('general.isletme_id_required'), 400);
 
             $pdo = get_db();
             $stmt = $pdo->prepare(
@@ -324,14 +324,14 @@ function register_urunler_routes(Router $router): void {
                 }
             }
 
-            if (!$urun) json_error('Barkod sistemde bulunamadi.', 404);
+            if (!$urun) json_error(__t('urun.barcode_not_found'), 404);
             json_response($urun);
             return;
         }
 
         // Non-admin: yetki kontrolu yap
         $isletmeId = $req['query']['isletme_id'] ?? null;
-        if (!$isletmeId) json_error('isletme_id zorunludur.', 400);
+        if (!$isletmeId) json_error(__t('general.isletme_id_required'), 400);
 
         $pdo = get_db();
         $stmt = $pdo->prepare(
@@ -340,11 +340,11 @@ function register_urunler_routes(Router $router): void {
         $stmt->execute([$req['user']['id'], $isletmeId]);
         $kiRow = $stmt->fetch();
 
-        if (!$kiRow) json_error('Bu isletmeye erisim yetkiniz yok.', 403);
+        if (!$kiRow) json_error(__t('depo.no_access'), 403);
 
         $yetkiler = json_decode($kiRow['yetkiler'], true);
         if (!($yetkiler['urun']['goruntule'] ?? false)) {
-            json_error('Urun goruntuleme yetkiniz yok.', 403);
+            json_error(__t('urun.view_no_permission'), 403);
         }
 
         $stmt = $pdo->prepare(
@@ -362,7 +362,7 @@ function register_urunler_routes(Router $router): void {
             }
         }
 
-        if (!$urun) json_error('Barkod sistemde bulunamadi.', 404);
+        if (!$urun) json_error(__t('urun.barcode_not_found'), 404);
         json_response($urun);
     }, [auth_guard()]);
 
@@ -430,7 +430,7 @@ function register_urunler_routes(Router $router): void {
             $isletmeId = $req['query']['isletme_id'] ?? null;
             $q = $req['query']['q'] ?? null;
 
-            if (!$isletmeId) json_error('isletme_id zorunludur.', 400);
+            if (!$isletmeId) json_error(__t('general.isletme_id_required'), 400);
 
             // Yetki kontrolu
             $stmt = $pdo->prepare(
@@ -439,11 +439,11 @@ function register_urunler_routes(Router $router): void {
             $stmt->execute([$user['id'], $isletmeId]);
             $kiRow = $stmt->fetch();
 
-            if (!$kiRow) json_error('Bu isletmeye erisim yetkiniz yok.', 403);
+            if (!$kiRow) json_error(__t('depo.no_access'), 403);
 
             $yetkiler = json_decode($kiRow['yetkiler'], true);
             if (!($yetkiler['urun']['goruntule'] ?? false)) {
-                json_error('Urun goruntuleme yetkiniz yok.', 403);
+                json_error(__t('urun.view_no_permission'), 403);
             }
 
             $where = ['isletme_id = ?', 'aktif = 1'];
@@ -558,7 +558,7 @@ function register_urunler_routes(Router $router): void {
         $stmt->execute([$req['params']['id']]);
         $row = $stmt->fetch();
 
-        if (!$row) json_error('Urun bulunamadi.', 404);
+        if (!$row) json_error(__t('urun.not_found'), 404);
         json_response($row);
     }, [auth_guard(), admin_guard()]);
 
@@ -566,9 +566,9 @@ function register_urunler_routes(Router $router): void {
     $router->post('/urunler/:id/barkod', function (array $req) {
         $barkod = $req['body']['barkod'] ?? null;
 
-        if (!$barkod) json_error('barkod zorunludur.', 400);
+        if (!$barkod) json_error(__t('urun.barcode_required_field'), 400);
         if (!preg_match('/^[a-zA-Z0-9\-]{1,50}$/', $barkod)) {
-            json_error('Gecerli bir barkod giriniz.', 400);
+            json_error(__t('urun.invalid_barcode'), 400);
         }
 
         $pdo = get_db();
@@ -581,21 +581,21 @@ function register_urunler_routes(Router $router): void {
 
             if (!$mevcutRow) {
                 $pdo->rollBack();
-                json_error('Urun bulunamadi.', 404);
+                json_error(__t('urun.not_found'), 404);
             }
 
             $barkodlar = array_values(array_filter(array_map('trim', explode(',', $mevcutRow['barkodlar'] ?? ''))));
 
             if (in_array($barkod, $barkodlar, true)) {
                 $pdo->rollBack();
-                json_error('Bu barkod zaten bu urune tanimli.', 409);
+                json_error(__t('urun.barcode_already_on_product'), 409);
             }
 
             // Ayni isletmede baska urunde bu barkod var mi?
             $cakisan = barkodBenzersizKontrol($pdo, $mevcutRow['isletme_id'], [$barkod], $req['params']['id']);
             if ($cakisan) {
                 $pdo->rollBack();
-                json_error("\"{$barkod}\" barkodu \"{$cakisan['urunAdi']}\" urununne zaten tanimli.", 409);
+                json_error(__t('urun.barcode_conflict', ['barkod' => $barkod, 'urunAdi' => $cakisan['urunAdi']]), 409);
             }
 
             $barkodlar[] = $barkod;
@@ -611,7 +611,7 @@ function register_urunler_routes(Router $router): void {
         } catch (\PDOException $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
             error_log('[POST /urunler/:id/barkod] ' . $e->getMessage());
-            json_error('Sunucu hatasi.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard(), admin_guard()]);
 
@@ -623,7 +623,7 @@ function register_urunler_routes(Router $router): void {
         $stmt->execute([$req['params']['id']]);
         $mevcutRow = $stmt->fetch();
 
-        if (!$mevcutRow) json_error('Urun bulunamadi.', 404);
+        if (!$mevcutRow) json_error(__t('urun.not_found'), 404);
 
         $barkodlar = array_values(array_filter(
             array_map('trim', explode(',', $mevcutRow['barkodlar'] ?? '')),
@@ -643,11 +643,11 @@ function register_urunler_routes(Router $router): void {
         $isletmeId = $req['query']['isletme_id'] ?? null;
         $preview = $req['query']['preview'] ?? null;
 
-        if (!$isletmeId) json_error('isletme_id zorunludur.', 400);
+        if (!$isletmeId) json_error(__t('general.isletme_id_required'), 400);
 
         // Dosya kontrolu
         if (!isset($_FILES['dosya']) || $_FILES['dosya']['error'] !== UPLOAD_ERR_OK) {
-            json_error('Excel dosyasi gereklidir.', 400);
+            json_error(__t('urun.excel_required'), 400);
         }
 
         $file = $_FILES['dosya'];
@@ -659,18 +659,18 @@ function register_urunler_routes(Router $router): void {
             'application/octet-stream',
         ];
         if (!in_array($file['type'], $izinliMimeler, true)) {
-            json_error('Sadece .xlsx veya .xls dosyasi yuklenebilir.', 400);
+            json_error(__t('urun.excel_only'), 400);
         }
 
         // Uzanti kontrolu
         $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         if (!in_array($ext, ['xlsx', 'xls'], true)) {
-            json_error('Sadece .xlsx veya .xls dosyasi yuklenebilir.', 400);
+            json_error(__t('urun.excel_only'), 400);
         }
 
         // Boyut kontrolu (10 MB)
         if ($file['size'] > 10 * 1024 * 1024) {
-            json_error('Dosya 10 MB sinirini asiyor.', 400);
+            json_error(__t('urun.file_too_large'), 400);
         }
 
         // PhpSpreadsheet ile oku
@@ -847,7 +847,7 @@ function register_urunler_routes(Router $router): void {
         }
 
         json_response([
-            'mesaj' => 'Yukleme tamamlandi.',
+            'mesaj' => __t('urun.upload_complete'),
             'yeni' => count($sonuclar['yeni']),
             'degisecek' => count($sonuclar['degisecek']),
             'korunacak' => count($sonuclar['korunacak']),

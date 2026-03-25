@@ -42,7 +42,7 @@ function rate_limit_middleware(string $category, int $max, int $window): Closure
         $pdo = get_db();
         if (!check_rate_limit($pdo, $category, $max, $window)) {
             json_response([
-                'hata' => 'Çok fazla istek gönderdiniz. Lütfen bekleyin.',
+                'hata' => __t('general.rate_limit'),
             ], 429);
             return false;
         }

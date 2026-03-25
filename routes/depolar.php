@@ -16,7 +16,7 @@ function check_depo_yetki(array $req, string $islem): bool {
     $depo = $stmt->fetch();
 
     if (!$depo) {
-        json_error('Depo bulunamadı.', 404);
+        json_error(__t('depo.not_found'), 404);
     }
 
     $stmt = $pdo->prepare(
@@ -26,12 +26,12 @@ function check_depo_yetki(array $req, string $islem): bool {
     $kiRow = $stmt->fetch();
 
     if (!$kiRow) {
-        json_error('Bu işletmeye erişim yetkiniz yok.', 403);
+        json_error(__t('depo.no_access'), 403);
     }
 
     $yetkiler = json_decode($kiRow['yetkiler'], true);
     if (!($yetkiler['depo'][$islem] ?? false)) {
-        json_error("Depo {$islem} yetkiniz yok.", 403);
+        json_error(__t('depo.no_permission', ['islem' => $islem]), 403);
     }
 
     return true;
@@ -49,7 +49,7 @@ function register_depolar_routes(Router $router): void {
         $konum      = $body['konum'] ?? null;
 
         if (!$isletme_id || !$ad || !trim($ad)) {
-            json_error('isletme_id ve ad zorunludur.', 400);
+            json_error(__t('depo.id_name_required'), 400);
         }
 
         try {
@@ -74,10 +74,10 @@ function register_depolar_routes(Router $router): void {
             json_response($row, 201);
         } catch (PDOException $e) {
             if ($e->errorInfo[1] == 1062) {
-                json_error('Bu depo bu işletmede zaten var.', 409);
+                json_error(__t('depo.already_exists'), 409);
             }
             error_log('[depolar] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard(), yetki_guard('depo', 'ekle', 'body')]);
 
@@ -89,7 +89,7 @@ function register_depolar_routes(Router $router): void {
         $ad = $body['ad'] ?? null;
 
         if (!$ad || !trim($ad)) {
-            json_error('Depo adı boş olamaz.', 400);
+            json_error(__t('depo.name_empty'), 400);
         }
 
         // Admin ek alanları da güncelleyebilir; kullanıcı sadece ad
@@ -114,13 +114,13 @@ function register_depolar_routes(Router $router): void {
             $row = $stmt->fetch();
 
             if (!$row) {
-                json_error('Depo bulunamadı.', 404);
+                json_error(__t('depo.not_found'), 404);
             }
 
             json_response($row);
         } catch (PDOException $e) {
             error_log('[depolar] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard()]);
 
@@ -142,7 +142,7 @@ function register_depolar_routes(Router $router): void {
             if (count($aktifSayimlar) > 0) {
                 $pdo->rollBack();
                 json_response([
-                    'hata'     => 'Bu depo aktif sayımlarda kullanılıyor.',
+                    'hata'     => __t('depo.active_counts_exist'),
                     'sayimlar' => array_column($aktifSayimlar, 'ad'),
                 ], 409);
             }
@@ -151,11 +151,11 @@ function register_depolar_routes(Router $router): void {
             $stmt->execute([$req['params']['id']]);
 
             $pdo->commit();
-            json_response(['mesaj' => 'Depo silindi.']);
+            json_response(['mesaj' => __t('depo.deleted')]);
         } catch (PDOException $e) {
             $pdo->rollBack();
             error_log('[depolar] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard()]);
 
@@ -168,19 +168,19 @@ function register_depolar_routes(Router $router): void {
             $row = $stmt->fetch();
 
             if (!$row) {
-                json_error('Depo bulunamadı.', 404);
+                json_error(__t('depo.not_found'), 404);
             }
             if ((int)$row['aktif'] === 1) {
-                json_error('Bu depo zaten aktif.', 400);
+                json_error(__t('depo.already_active'), 400);
             }
 
             $stmt = $pdo->prepare('UPDATE depolar SET aktif = 1 WHERE id = ?');
             $stmt->execute([$req['params']['id']]);
 
-            json_response(['mesaj' => 'Depo geri alındı.']);
+            json_response(['mesaj' => __t('depo.restored')]);
         } catch (PDOException $e) {
             error_log('[depolar] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard(), admin_guard()]);
 
@@ -195,7 +195,7 @@ function register_depolar_routes(Router $router): void {
             if ($req['user']['rol'] !== 'admin') {
                 $isletme_id = $query['isletme_id'] ?? null;
                 if (!$isletme_id) {
-                    json_error('isletme_id zorunludur.', 400);
+                    json_error(__t('general.isletme_id_required'), 400);
                 }
 
                 $stmt = $pdo->prepare(
@@ -205,12 +205,12 @@ function register_depolar_routes(Router $router): void {
                 $kiRow = $stmt->fetch();
 
                 if (!$kiRow) {
-                    json_error('Bu işletmeye erişim yetkiniz yok.', 403);
+                    json_error(__t('depo.no_access'), 403);
                 }
 
                 $yetkiler = json_decode($kiRow['yetkiler'], true);
                 if (!($yetkiler['depo']['goruntule'] ?? false)) {
-                    json_error('Depo görüntüleme yetkiniz yok.', 403);
+                    json_error(__t('depo.view_no_permission'), 403);
                 }
 
                 $stmt = $pdo->prepare(
@@ -331,7 +331,7 @@ function register_depolar_routes(Router $router): void {
             json_response(['data' => $enriched, 'toplam' => $toplam]);
         } catch (PDOException $e) {
             error_log('[depolar] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard()]);
 
@@ -349,7 +349,7 @@ function register_depolar_routes(Router $router): void {
             $row = $stmt->fetch();
 
             if (!$row) {
-                json_error('Depo bulunamadı.', 404);
+                json_error(__t('depo.not_found'), 404);
             }
 
             $isletme_ad  = $row['isletme_ad'];
@@ -364,7 +364,7 @@ function register_depolar_routes(Router $router): void {
             json_response($row);
         } catch (PDOException $e) {
             error_log('[depolar] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard(), admin_guard()]);
 }

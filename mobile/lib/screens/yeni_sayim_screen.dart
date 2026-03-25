@@ -6,6 +6,7 @@ import '../models/isletme.dart';
 import '../services/depo_service.dart';
 import '../services/sayim_service.dart';
 import '../widgets/bildirim.dart';
+import '../providers/language_provider.dart';
 import 'app_layout.dart';
 
 const _P = Color(0xFF6C53F5);
@@ -90,7 +91,7 @@ class _YeniSayimScreenState extends ConsumerState<YeniSayimScreen> {
     final ad = _kisiController.text.trim();
     if (ad.isEmpty) return;
     if (_kisiler.contains(ad)) {
-      _showSnack('Bu kişi zaten eklendi.', basarili: false);
+      _showSnack(t('app.person_already_added'), basarili: false);
       return;
     }
     setState(() => _kisiler.add(ad));
@@ -116,11 +117,11 @@ class _YeniSayimScreenState extends ConsumerState<YeniSayimScreen> {
 
   Future<void> _handleKaydet() async {
     if (_seciliIsletmeId == null) {
-      _showSnack('İşletme seçin.', basarili: false);
+      _showSnack(t('app.select_business'), basarili: false);
       return;
     }
     if (_seciliDepoId == null) {
-      _showSnack('Depo seçin.', basarili: false);
+      _showSnack(t('app.select_warehouse'), basarili: false);
       return;
     }
 
@@ -137,12 +138,12 @@ class _YeniSayimScreenState extends ConsumerState<YeniSayimScreen> {
         'tarih': _tarih,
         'kisiler': _kisiler,
       });
-      _showSnack('Sayım başlatıldı!');
+      _showSnack(t('app.count_started'));
       if (mounted) {
         context.go('/sayim/${data['id']}/urun-ekle');
       }
     } catch (e) {
-      _showSnack('Sayım oluşturulamadı.', basarili: false);
+      _showSnack(t('app.count_create_failed'), basarili: false);
       setState(() => _kaydediyor = false);
     }
   }
@@ -150,7 +151,7 @@ class _YeniSayimScreenState extends ConsumerState<YeniSayimScreen> {
   @override
   Widget build(BuildContext context) {
     return AppLayout(
-      pageTitle: 'Yeni Sayım',
+      pageTitle: t('ui.new_count'),
       showBack: true,
       child: Column(
         children: [
@@ -161,7 +162,7 @@ class _YeniSayimScreenState extends ConsumerState<YeniSayimScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // İşletme
-                  _label('İŞLETME'),
+                  _label(t('app.business_label')),
                   const SizedBox(height: 6),
                   GestureDetector(
                     onTap: () => _showIsletmePicker(),
@@ -179,7 +180,7 @@ class _YeniSayimScreenState extends ConsumerState<YeniSayimScreen> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              _seciliIsletme?.ad ?? 'İşletme seçin...',
+                              _seciliIsletme?.ad ?? t('app.select_business_placeholder'),
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
@@ -197,7 +198,7 @@ class _YeniSayimScreenState extends ConsumerState<YeniSayimScreen> {
                   const SizedBox(height: 20),
 
                   // Depo
-                  _label('DEPO'),
+                  _label(t('app.warehouse_label')),
                   const SizedBox(height: 6),
                   GestureDetector(
                     onTap: () {
@@ -220,8 +221,8 @@ class _YeniSayimScreenState extends ConsumerState<YeniSayimScreen> {
                             Expanded(
                               child: Text(
                                 _seciliIsletmeId == null
-                                    ? 'Önce işletme seçin'
-                                    : _seciliDepoAd ?? (_depolar.isEmpty ? 'Bu işletmede depo yok' : 'Depo seçin...'),
+                                    ? t('app.select_business_first')
+                                    : _seciliDepoAd ?? (_depolar.isEmpty ? t('app.no_warehouse_in_business') : t('app.select_warehouse_placeholder')),
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -240,7 +241,7 @@ class _YeniSayimScreenState extends ConsumerState<YeniSayimScreen> {
                   const SizedBox(height: 20),
 
                   // Tarih
-                  _label('TARİH'),
+                  _label(t('app.date_label')),
                   const SizedBox(height: 6),
                   GestureDetector(
                     onTap: () async {
@@ -281,7 +282,7 @@ class _YeniSayimScreenState extends ConsumerState<YeniSayimScreen> {
                   const SizedBox(height: 20),
 
                   // Sayım Yapan Kişiler
-                  _label('SAYIM YAPAN KİŞİLER'),
+                  _label(t('app.count_people_label')),
                   const SizedBox(height: 6),
                   Container(
                     width: double.infinity,
@@ -293,7 +294,7 @@ class _YeniSayimScreenState extends ConsumerState<YeniSayimScreen> {
                       border: Border.all(color: const Color(0xFFE5E7EB)),
                     ),
                     child: _kisiler.isEmpty
-                        ? const Text('Kişi eklenmedi',
+                        ? Text(t('app.no_people_added'),
                             style: TextStyle(fontSize: 12, color: Color(0xFF9CA3AF)))
                         : Wrap(
                             spacing: 6,
@@ -331,7 +332,7 @@ class _YeniSayimScreenState extends ConsumerState<YeniSayimScreen> {
                           onSubmitted: (_) => _kisiEkle(),
                           style: const TextStyle(fontSize: 14),
                           decoration: InputDecoration(
-                            hintText: 'Kişi adı girin...',
+                            hintText: t('app.enter_person_name'),
                             hintStyle: const TextStyle(fontSize: 14, color: Color(0xFF9CA3AF)),
                             contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                             filled: true,
@@ -361,7 +362,7 @@ class _YeniSayimScreenState extends ConsumerState<YeniSayimScreen> {
                             color: _P,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Text('Ekle',
+                          child: Text(t('ui.add'),
                               style: TextStyle(
                                   fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
                         ),
@@ -402,7 +403,7 @@ class _YeniSayimScreenState extends ConsumerState<YeniSayimScreen> {
                       const Icon(Icons.add, size: 16, color: Colors.white),
                     const SizedBox(width: 8),
                     Text(
-                      _kaydediyor ? 'Başlatılıyor...' : 'Sayımı Başlat',
+                      _kaydediyor ? t('app.starting') : t('app.start_count'),
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
@@ -437,7 +438,7 @@ class _YeniSayimScreenState extends ConsumerState<YeniSayimScreen> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (ctx) => _PickerSheet(
-        title: 'İşletme Seç',
+        title: t('app.pick_business'),
         icon: Icons.business,
         items: _isletmeler.map((i) => {'id': i.id, 'ad': i.ad, 'kod': i.kod}).toList(),
         seciliId: _seciliIsletmeId,
@@ -455,7 +456,7 @@ class _YeniSayimScreenState extends ConsumerState<YeniSayimScreen> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (ctx) => _PickerSheet(
-        title: 'Depo Seç',
+        title: t('app.pick_warehouse'),
         icon: Icons.warehouse,
         items: _depolar.map((d) => {'id': d['id'], 'ad': d['ad']}).toList(),
         seciliId: _seciliDepoId,

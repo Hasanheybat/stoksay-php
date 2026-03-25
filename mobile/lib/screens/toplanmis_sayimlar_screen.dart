@@ -9,6 +9,7 @@ import '../models/isletme.dart';
 import '../services/sayim_service.dart';
 import '../widgets/bildirim.dart';
 import 'app_layout.dart';
+import '../providers/language_provider.dart';
 
 const _primary = Color(0xFF6C53F5);
 const _primaryLight = Color(0x1A6C53F5);
@@ -93,13 +94,13 @@ class _ToplanmisSayimlarScreenState
               ),
             ),
             const SizedBox(height: 16),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  Icon(Icons.business, color: _primary, size: 20),
-                  SizedBox(width: 8),
-                  Text('İşletme Seç', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF1F2937))),
+                  const Icon(Icons.business, color: _primary, size: 20),
+                  const SizedBox(width: 8),
+                  Text(t('app.pick_business'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF1F2937))),
                 ],
               ),
             ),
@@ -245,8 +246,7 @@ class _ToplanmisSayimlarScreenState
                           ),
                         ),
                         const SizedBox(height: 2),
-                        const Text(
-                          'Toplanan sayımların detayları',
+                        Text(t('app.collected_counts_detail'),
                           style: TextStyle(
                             fontSize: 11,
                             color: Color(0xFF9CA3AF),
@@ -287,7 +287,7 @@ class _ToplanmisSayimlarScreenState
                             final shortId = '#${sayim['id']?.toString().split('-')[0].toUpperCase() ?? ''}';
                             Clipboard.setData(ClipboardData(text: shortId));
                             Navigator.pop(ctx);
-                            showBildirim(context, 'Sayım ID kopyalandı', basarili: true);
+                            showBildirim(context, t('app.count_id_copied'), basarili: true);
                           },
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -317,13 +317,13 @@ class _ToplanmisSayimlarScreenState
               ),
             ),
             const SizedBox(height: 12),
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'TOPLANAN SAYIMLAR',
-                  style: TextStyle(
+                  t('app.collected_counts_label'),
+                  style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF9CA3AF),
@@ -336,11 +336,11 @@ class _ToplanmisSayimlarScreenState
             // Liste
             Flexible(
               child: kaynaklar.isEmpty
-                  ? const Padding(
-                      padding: EdgeInsets.all(32),
+                  ? Padding(
+                      padding: const EdgeInsets.all(32),
                       child: Text(
-                        'Kaynak bilgisi bulunamadı',
-                        style: TextStyle(fontSize: 14, color: Color(0xFF9CA3AF)),
+                        t('app.source_not_found'),
+                        style: const TextStyle(fontSize: 14, color: Color(0xFF9CA3AF)),
                       ),
                     )
                   : ListView.builder(

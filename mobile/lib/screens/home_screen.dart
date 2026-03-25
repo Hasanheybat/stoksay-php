@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/auth_provider.dart';
 import '../providers/isletme_provider.dart';
 import '../providers/connectivity_provider.dart';
+import '../providers/language_provider.dart';
 import '../widgets/sync_result_dialog.dart';
 import '../widgets/bildirim.dart';
 import 'app_layout.dart';
@@ -81,16 +82,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
       if (hasPerms) {
         // Yetki atanmış — atanan yetkileri listele
         final yetkiListesi = <String>[];
-        if (authN.hasYetki('urun', 'goruntule')) yetkiListesi.add('Stoklar');
-        if (authN.hasYetki('sayim', 'goruntule')) yetkiListesi.add('Sayımlar');
-        if (authN.hasYetki('depo', 'goruntule')) yetkiListesi.add('Depolar');
-        if (authN.hasYetki('toplam_sayim', 'goruntule')) yetkiListesi.add('Toplam Sayımlar');
+        if (authN.hasYetki('urun', 'goruntule')) yetkiListesi.add(t('ui.stocks'));
+        if (authN.hasYetki('sayim', 'goruntule')) yetkiListesi.add(t('ui.counts'));
+        if (authN.hasYetki('depo', 'goruntule')) yetkiListesi.add(t('ui.warehouses'));
+        if (authN.hasYetki('toplam_sayim', 'goruntule')) yetkiListesi.add(t('ui.collected_counts'));
         setState(() {
           _syncing = false;
           _syncDone = true;
           _syncStats = isAdm
-              ? 'Yönetici — tüm yetkiler aktif'
-              : 'Yetkiler: ${yetkiListesi.join(", ")}';
+              ? t('app.admin_all_perms')
+              : '${t("app.permissions")}: ${yetkiListesi.join(", ")}';
         });
       } else {
         // Hâlâ yetki yok
@@ -98,7 +99,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
           _syncing = false;
           _syncDone = false;
           _yetkiYok = true;
-          _syncStats = 'Yetki atanmadı';
+          _syncStats = t('app.no_permission_assigned');
         });
         return;
       }
@@ -109,7 +110,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
     } catch (_) {
       setState(() {
         _syncing = false;
-        _syncStats = 'Senkronizasyon başarısız';
+        _syncStats = t('app.sync_failed_short');
       });
     }
   }
@@ -118,14 +119,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
     final connectivity = ref.read(connectivityProvider);
     if (!connectivity.online) {
       if (mounted) {
-        showBildirim(context, 'İnternet bağlantısı yok', basarili: false);
+        showBildirim(context, t('app.no_internet'), basarili: false);
       }
       return;
     }
 
     setState(() {
       _syncing = true;
-      _syncStats = 'Veriler güncelleniyor...';
+      _syncStats = t('app.updating_data');
     });
 
     try {
@@ -135,7 +136,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
       setState(() {
         _syncing = false;
         _syncDone = true;
-        _syncStats = 'Güncelleme tamamlandı';
+        _syncStats = t('app.update_complete');
       });
 
       if (mounted) {
@@ -148,7 +149,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
     } catch (e) {
       setState(() {
         _syncing = false;
-        _syncStats = 'Güncelleme başarısız';
+        _syncStats = t('app.update_failed');
       });
       if (mounted) {
         showBildirim(context, 'Güncelleme hatası: ${e.toString().length > 80 ? e.toString().substring(0, 80) : e}', basarili: false);
@@ -163,7 +164,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
       // ── Online moda dön: otomatik push + pull ──
       if (!connectivity.online) {
         if (mounted) {
-          showBildirim(context, 'Çevrimiçi moda dönmek için internet gerekli', basarili: false);
+          showBildirim(context, t('app.internet_needed_online'), basarili: false);
         }
         return;
       }
@@ -174,16 +175,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
         builder: (ctx) => AlertDialog(
           backgroundColor: const Color(0xFF1E1B2E),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Çevrimiçi Moda Dön', style: TextStyle(color: Colors.white)),
+          title: Text(t('app.switch_online'), style: TextStyle(color: Colors.white)),
           content: Text(
             bekleyen > 0
-                ? '$bekleyen bekleyen işlem sunucuya gönderilecek ve taze veriler çekilecek.\n\nDevam etmek istiyor musunuz?'
-                : 'Sunucudan taze veriler çekilecek.\n\nDevam etmek istiyor musunuz?',
+                ? t('app.pending_ops_confirm').replaceAll('{count}', '$bekleyen')
+                : t('app.online_switch_confirm'),
             style: const TextStyle(color: Colors.white70),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('İptal', style: TextStyle(color: Colors.white54))),
-            TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Devam', style: TextStyle(color: Colors.orange))),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(t('ui.cancel'), style: const TextStyle(color: Colors.white54))),
+            TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(t('app.continue_btn'), style: const TextStyle(color: Colors.orange))),
           ],
         ),
       );
@@ -191,7 +192,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
 
       setState(() {
         _syncing = true;
-        _syncStats = bekleyen > 0 ? 'Veriler gönderiliyor...' : 'Veriler çekiliyor...';
+        _syncStats = bekleyen > 0 ? t('app.sending_data') : t('app.pulling_data');
       });
 
       try {
@@ -201,14 +202,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
         setState(() {
           _syncing = false;
           _syncDone = true;
-          _syncStats = 'Çevrimiçi moda dönüldü';
+          _syncStats = t('app.switched_online');
         });
 
         if (mounted) {
           if (result.basarili > 0 || result.basarisiz > 0) {
             await SyncResultDialog.show(context, result);
           } else {
-            showBildirim(context, 'Çevrimiçi moda dönüldü');
+            showBildirim(context, t('app.switched_online'));
           }
         }
 
@@ -218,7 +219,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
       } catch (e) {
         setState(() {
           _syncing = false;
-          _syncStats = 'Geçiş başarısız';
+          _syncStats = t('app.switch_failed');
         });
         if (mounted) {
           showBildirim(context, 'Geçiş hatası: ${e.toString().length > 80 ? e.toString().substring(0, 80) : e}', basarili: false);
@@ -228,7 +229,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
       // ── Offline moda geç: veri indir ──
       if (!connectivity.online) {
         if (mounted) {
-          showBildirim(context, 'Offline moda geçmek için önce internet gerekli', basarili: false);
+          showBildirim(context, t('app.internet_needed_offline'), basarili: false);
         }
         return;
       }
@@ -238,14 +239,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
         builder: (ctx) => AlertDialog(
           backgroundColor: const Color(0xFF1E1B2E),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          title: const Text('Offline Moda Geç', style: TextStyle(color: Colors.white)),
-          content: const Text(
-            'Tüm veriler telefonunuza indirilecek.\nİnternet olmadan çalışabileceksiniz.\n\nDevam etmek istiyor musunuz?',
+          title: Text(t('app.switch_offline'), style: TextStyle(color: Colors.white)),
+          content: Text(
+            t('app.offline_download_confirm'),
             style: TextStyle(color: Colors.white70),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('İptal', style: TextStyle(color: Colors.white54))),
-            TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Devam', style: TextStyle(color: Color(0xFF6C53F5)))),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(t('ui.cancel'), style: const TextStyle(color: Colors.white54))),
+            TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(t('app.continue_btn'), style: const TextStyle(color: Color(0xFF6C53F5)))),
           ],
         ),
       );
@@ -253,7 +254,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
 
       setState(() {
         _syncing = true;
-        _syncStats = 'Veriler indiriliyor...';
+        _syncStats = t('app.downloading_data');
       });
 
       try {
@@ -273,7 +274,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
       } catch (_) {
         setState(() {
           _syncing = false;
-          _syncStats = 'Veri indirme başarısız';
+          _syncStats = t('app.download_failed');
         });
       }
     }
@@ -348,11 +349,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              auth.kullanici?.adSoyad ?? 'Kullanıcı',
+                              auth.kullanici?.adSoyad ?? t('app.user'),
                               style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                             ),
-                            const Text(
-                              'Hesap Pasif',
+                            Text(
+                              t('app.account_passive'),
                               style: TextStyle(color: Color(0xFFFCA5A5), fontSize: 13, fontWeight: FontWeight.w600),
                             ),
                           ],
@@ -390,13 +391,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
                         ),
                         const SizedBox(height: 22),
                         // Başlık
-                        const Text(
-                          'Hesabınız Pasife Alındı',
+                        Text(
+                          t('app.account_deactivated'),
                           style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 12),
                         // Açıklama
-                        const Text(
+                        Text(
                           'Hesabınız yönetici tarafından pasife alınmıştır. Sisteme erişiminiz geçici olarak durdurulmuştur.',
                           textAlign: TextAlign.center,
                           style: TextStyle(color: Colors.white60, fontSize: 15.5, height: 1.5),
@@ -607,7 +608,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          isOffline ? 'Çevrimiçi Moda Dön' : 'Offline Moda Geç',
+                          isOffline ? t('app.switch_online') : t('app.switch_offline'),
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -636,25 +637,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
                   children: [
                     _NavCard(
                       icon: Icons.business,
-                      label: 'İşletmeler',
+                      label: t('ui.businesses'),
                       onTap: _showIsletmeler,
                     ),
                     if (authNotifier.hasYetki('urun', 'goruntule'))
                       _NavCard(
                         icon: Icons.inventory_2,
-                        label: 'Stoklar',
+                        label: t('ui.stocks'),
                         onTap: () => context.push('/stoklar'),
                       ),
                     if (authNotifier.hasYetki('sayim', 'goruntule'))
                       _NavCard(
                         icon: Icons.assignment,
-                        label: 'Sayımlar',
+                        label: t('ui.counts'),
                         onTap: () => context.push('/sayimlar'),
                       ),
                     if (authNotifier.hasYetki('depo', 'goruntule'))
                       _NavCard(
                         icon: Icons.warehouse,
-                        label: 'Depolar',
+                        label: t('ui.warehouses'),
                         onTap: () => context.push('/depolar'),
                       ),
                     if (authNotifier.hasYetki('toplam_sayim', 'goruntule'))
@@ -708,7 +709,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            auth.kullanici?.adSoyad ?? 'Kullanıcı',
+                            auth.kullanici?.adSoyad ?? t('app.user'),
                             style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                           Text(
@@ -860,13 +861,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with SingleTickerProvid
                         ),
                         const SizedBox(height: 22),
                         // Başlık
-                        const Text(
+                        Text(
                           'Yetki Atanmamış',
                           style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700),
                         ),
                         const SizedBox(height: 12),
                         // Açıklama
-                        const Text(
+                        Text(
                           'Hesabınıza henüz herhangi bir işletme yetkisi atanmamış. Yöneticinizle iletişime geçin.',
                           textAlign: TextAlign.center,
                           style: TextStyle(color: Colors.white60, fontSize: 15.5, height: 1.5),
@@ -1010,13 +1011,13 @@ class _IsletmelerSheet extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 20),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
               children: [
-                Icon(Icons.business, color: Color(0xFF6C53F5), size: 20),
-                SizedBox(width: 8),
-                Text('İşletmelerim', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1F2937))),
+                const Icon(Icons.business, color: Color(0xFF6C53F5), size: 20),
+                const SizedBox(width: 8),
+                Text(t('ui.businesses'), style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1F2937))),
               ],
             ),
           ),

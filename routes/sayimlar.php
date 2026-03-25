@@ -17,7 +17,7 @@ function check_sayim_yetki(array $sayim, array $req, string $islem): bool {
     $toplanmis = is_toplanmis_sayim($sayim['notlar'] ?? null);
 
     if (!$toplanmis && ($sayim['kullanici_id'] ?? '') !== $user['id']) {
-        json_error('Bu sayıma erişim yetkiniz yok.', 403);
+        json_error(__t('sayim.no_access'), 403);
         return false;
     }
 
@@ -30,7 +30,7 @@ function check_sayim_yetki(array $sayim, array $req, string $islem): bool {
     $yetkiler = $row ? json_decode($row['yetkiler'], true) : null;
 
     if (!$row || !($yetkiler[$kat][$islem] ?? false)) {
-        $msg = $toplanmis ? "Toplanmış sayım $islem yetkiniz yok." : "Sayım $islem yetkiniz yok.";
+        $msg = $toplanmis ? __t('sayim.no_permission', ['islem' => $islem]) : __t('sayim.no_permission', ['islem' => $islem]);
         json_error($msg, 403);
         return false;
     }
@@ -65,7 +65,7 @@ function register_sayimlar_routes(Router $router): void {
                     $row = $stmt->fetch();
                     $yetkiler = $row ? json_decode($row['yetkiler'], true) : null;
                     if (!$row || !($yetkiler[$yetkiKat]['goruntule'] ?? false)) {
-                        json_error("$yetkiKat görüntüleme yetkiniz yok.", 403);
+                        json_error(__t('sayim.view_no_permission', ['kategori' => $yetkiKat]), 403);
                     }
                 }
             }
@@ -92,7 +92,7 @@ function register_sayimlar_routes(Router $router): void {
             if ($toplama === '0') { $where[] = "(s.notlar IS NULL OR s.notlar NOT LIKE '%toplanan_sayimlar%')"; }
 
             if ($user['rol'] !== 'admin') {
-                if (!$isletmeId) json_error('isletme_id zorunludur.', 400);
+                if (!$isletmeId) json_error(__t('general.isletme_id_required'), 400);
                 $where[] = 's.kullanici_id = ?';
                 $params[] = $user['id'];
             }
@@ -131,7 +131,7 @@ function register_sayimlar_routes(Router $router): void {
             json_response(['data' => $enriched, 'toplam' => $toplam]);
         } catch (\Exception $e) {
             error_log('[sayimlar GET /] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard()]);
 
@@ -151,7 +151,7 @@ function register_sayimlar_routes(Router $router): void {
             $stmt->execute([$req['params']['id']]);
             $sayim = $stmt->fetch();
 
-            if (!$sayim) json_error('Sayım bulunamadı.', 404);
+            if (!$sayim) json_error(__t('sayim.not_found'), 404);
             if (!check_sayim_yetki($sayim, $req, 'goruntule')) return;
 
             $stmt = $pdo->prepare("SELECT sk.id, sk.miktar, sk.birim, sk.notlar, sk.created_at,
@@ -187,7 +187,7 @@ function register_sayimlar_routes(Router $router): void {
             json_response($result);
         } catch (\Exception $e) {
             error_log('[sayimlar GET /:id] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard()]);
 
@@ -199,13 +199,13 @@ function register_sayimlar_routes(Router $router): void {
             $stmt->execute([$req['params']['id']]);
             $sayim = $stmt->fetch();
 
-            if (!$sayim) json_error('Sayım bulunamadı.', 404);
+            if (!$sayim) json_error(__t('sayim.not_found'), 404);
 
             $isToplanmis = is_toplanmis_sayim($sayim['notlar'] ?? null);
 
             if ($req['user']['rol'] !== 'admin') {
                 if (!$isToplanmis && $sayim['kullanici_id'] !== $req['user']['id']) {
-                    json_error('Bu sayımı silme yetkiniz yok.', 403);
+                    json_error(__t('sayim.no_delete_permission'), 403);
                 }
                 $stmt2 = $pdo->prepare('SELECT yetkiler FROM kullanici_isletme WHERE kullanici_id = ? AND isletme_id = ? AND aktif = 1');
                 $stmt2->execute([$req['user']['id'], $sayim['isletme_id']]);
@@ -213,38 +213,38 @@ function register_sayimlar_routes(Router $router): void {
                 $yetkiKat = $isToplanmis ? 'toplam_sayim' : 'sayim';
                 $yetkiler = $kiRow ? json_decode($kiRow['yetkiler'], true) : null;
                 if (!$kiRow || !($yetkiler[$yetkiKat]['sil'] ?? false)) {
-                    json_error($isToplanmis ? 'Toplanmış sayım silme yetkiniz yok.' : 'Sayım silme yetkiniz yok.', 403);
+                    json_error($isToplanmis ? __t('sayim.toplama_no_delete') : __t('sayim.no_permission', ['islem' => 'sil']), 403);
                 }
             }
 
             if ($sayim['durum'] === 'tamamlandi' && !$isToplanmis) {
-                json_error('Tamamlanmış sayım silinemez.', 400);
+                json_error(__t('sayim.cannot_delete_completed'), 400);
             }
 
             $stmt = $pdo->prepare("UPDATE sayimlar SET durum = 'silindi' WHERE id = ?");
             $stmt->execute([$req['params']['id']]);
-            json_response(['mesaj' => 'Sayım silindi.']);
+            json_response(['mesaj' => __t('sayim.deleted')]);
         } catch (\Exception $e) {
             error_log('[sayimlar DELETE /:id] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard()]);
 
     // PUT /api/sayimlar/:id/restore
     $router->put('/sayimlar/:id/restore', function($req) {
-        if ($req['user']['rol'] !== 'admin') json_error('Yalnızca admin bu işlemi yapabilir.', 403);
+        if ($req['user']['rol'] !== 'admin') json_error(__t('sayim.admin_only'), 403);
         try {
             $pdo = get_db();
             $stmt = $pdo->prepare('SELECT id, durum FROM sayimlar WHERE id = ?');
             $stmt->execute([$req['params']['id']]);
             $row = $stmt->fetch();
-            if (!$row) json_error('Sayım bulunamadı.', 404);
-            if ($row['durum'] !== 'silindi') json_error('Bu sayım silinmiş durumda değil.', 400);
+            if (!$row) json_error(__t('sayim.not_found'), 404);
+            if ($row['durum'] !== 'silindi') json_error(__t('sayim.not_deleted_status'), 400);
             $pdo->prepare("UPDATE sayimlar SET durum = 'devam' WHERE id = ?")->execute([$req['params']['id']]);
-            json_response(['mesaj' => 'Sayım geri alındı.']);
+            json_response(['mesaj' => __t('sayim.restored')]);
         } catch (\Exception $e) {
             error_log('[sayimlar] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard()]);
 
@@ -258,7 +258,7 @@ function register_sayimlar_routes(Router $router): void {
         $notlar = $body['notlar'] ?? null;
 
         if (!$isletmeId || !$depoId || !$ad) {
-            json_error('isletme_id, depo_id ve ad zorunludur.', 400);
+            json_error(__t('sayim.id_depo_name_required'), 400);
         }
 
         $pdo = get_db();
@@ -272,7 +272,7 @@ function register_sayimlar_routes(Router $router): void {
             json_response($stmt->fetch(), 201);
         } catch (\Exception $e) {
             error_log('[sayimlar POST /] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard(), yetki_guard('sayim', 'ekle', 'body')]);
 
@@ -286,13 +286,13 @@ function register_sayimlar_routes(Router $router): void {
             $stmt->execute([$req['params']['id']]);
             $sayim = $stmt->fetch();
 
-            if (!$sayim) json_error('Sayım bulunamadı.', 404);
+            if (!$sayim) json_error(__t('sayim.not_found'), 404);
 
             $isToplanmis = is_toplanmis_sayim($sayim['notlar'] ?? null);
 
             if ($req['user']['rol'] !== 'admin') {
                 if (!$isToplanmis && $sayim['kullanici_id'] !== $req['user']['id']) {
-                    json_error('Bu sayımı düzenleme yetkiniz yok.', 403);
+                    json_error(__t('sayim.no_edit_permission'), 403);
                 }
                 $yetkiKat = $isToplanmis ? 'toplam_sayim' : 'sayim';
                 $stmt2 = $pdo->prepare('SELECT yetkiler FROM kullanici_isletme WHERE kullanici_id = ? AND isletme_id = ? AND aktif = 1');
@@ -300,8 +300,7 @@ function register_sayimlar_routes(Router $router): void {
                 $kiRow = $stmt2->fetch();
                 $yetkiler = $kiRow ? json_decode($kiRow['yetkiler'], true) : null;
                 if (!$kiRow || !($yetkiler[$yetkiKat]['duzenle'] ?? false)) {
-                    $label = $isToplanmis ? 'Toplanmış sayım' : 'Sayım';
-                    json_error("$label düzenleme yetkiniz yok.", 403);
+                    json_error($isToplanmis ? __t('sayim.toplama_no_edit') : __t('sayim.no_permission', ['islem' => 'duzenle']), 403);
                 }
             }
 
@@ -310,7 +309,7 @@ function register_sayimlar_routes(Router $router): void {
             $kisiler = $body['kisiler'] ?? null;
 
             if ($sayim['durum'] !== 'devam' && ($depoId !== null || $kisiler !== null)) {
-                json_error('Tamamlanmış sayımda sadece isim değiştirilebilir.', 400);
+                json_error(__t('sayim.completed_edit_limited'), 400);
             }
 
             $fields = [];
@@ -347,7 +346,7 @@ function register_sayimlar_routes(Router $router): void {
             $stmt->execute($params);
 
             if ($stmt->rowCount() === 0 && $clientUpdatedAt) {
-                json_error('Bu kayıt başka biri tarafından güncellendi. Lütfen sayfayı yenileyip tekrar deneyin.', 409);
+                json_error(__t('sayim.concurrent_update'), 409);
             }
 
             $stmt = $pdo->prepare('SELECT * FROM sayimlar WHERE id = ?');
@@ -355,7 +354,7 @@ function register_sayimlar_routes(Router $router): void {
             json_response($stmt->fetch());
         } catch (\Exception $e) {
             error_log('[sayimlar PUT /:id] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard()]);
 
@@ -367,9 +366,9 @@ function register_sayimlar_routes(Router $router): void {
             $stmt->execute([$req['params']['id']]);
             $sayim = $stmt->fetch();
 
-            if (!$sayim) json_error('Sayım bulunamadı.', 404);
+            if (!$sayim) json_error(__t('sayim.not_found'), 404);
             if (!check_sayim_yetki($sayim, $req, 'duzenle')) return;
-            if ($sayim['durum'] !== 'devam') json_error('Sadece devam eden sayımlar tamamlanabilir.', 400);
+            if ($sayim['durum'] !== 'devam') json_error(__t('sayim.only_active_can_complete'), 400);
 
             $pdo->prepare("UPDATE sayimlar SET durum = 'tamamlandi' WHERE id = ?")->execute([$req['params']['id']]);
             $stmt = $pdo->prepare('SELECT * FROM sayimlar WHERE id = ?');
@@ -377,27 +376,27 @@ function register_sayimlar_routes(Router $router): void {
             json_response($stmt->fetch());
         } catch (\Exception $e) {
             error_log('[sayimlar PUT /:id/tamamla] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard()]);
 
     // PUT /api/sayimlar/:id/yeniden-ac
     $router->put('/sayimlar/:id/yeniden-ac', function($req) {
-        if ($req['user']['rol'] !== 'admin') json_error('Sayımı yeniden açma yetkisi yalnızca adminlere aittir.', 403);
+        if ($req['user']['rol'] !== 'admin') json_error(__t('sayim.reopen_admin_only'), 403);
         try {
             $pdo = get_db();
             $stmt = $pdo->prepare('SELECT durum FROM sayimlar WHERE id = ?');
             $stmt->execute([$req['params']['id']]);
             $row = $stmt->fetch();
-            if (!$row) json_error('Sayım bulunamadı.', 404);
-            if ($row['durum'] === 'devam') json_error('Sayım zaten açık durumda.', 400);
+            if (!$row) json_error(__t('sayim.not_found'), 404);
+            if ($row['durum'] === 'devam') json_error(__t('sayim.already_open'), 400);
             $pdo->prepare("UPDATE sayimlar SET durum = 'devam' WHERE id = ?")->execute([$req['params']['id']]);
             $stmt = $pdo->prepare('SELECT * FROM sayimlar WHERE id = ?');
             $stmt->execute([$req['params']['id']]);
             json_response($stmt->fetch());
         } catch (\Exception $e) {
             error_log('[sayimlar] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard()]);
 
@@ -408,7 +407,7 @@ function register_sayimlar_routes(Router $router): void {
             $stmt = $pdo->prepare('SELECT kullanici_id, isletme_id, notlar FROM sayimlar WHERE id = ?');
             $stmt->execute([$req['params']['id']]);
             $sayim = $stmt->fetch();
-            if (!$sayim) json_error('Sayım bulunamadı.', 404);
+            if (!$sayim) json_error(__t('sayim.not_found'), 404);
             if (!check_sayim_yetki($sayim, $req, 'goruntule')) return;
 
             $stmt = $pdo->prepare("SELECT sk.*,
@@ -435,7 +434,7 @@ function register_sayimlar_routes(Router $router): void {
             json_response($enriched);
         } catch (\Exception $e) {
             error_log('[sayimlar GET /:id/kalemler] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard()]);
 
@@ -447,8 +446,8 @@ function register_sayimlar_routes(Router $router): void {
         $birim = $body['birim'] ?? null;
         $notlar = $body['notlar'] ?? null;
 
-        if (!$urunId || $miktar === null) json_error('urun_id ve miktar zorunludur.', 400);
-        if (!is_numeric($miktar)) json_error('miktar sayısal bir değer olmalıdır.', 400);
+        if (!$urunId || $miktar === null) json_error(__t('sayim.urun_miktar_required'), 400);
+        if (!is_numeric($miktar)) json_error(__t('sayim.miktar_numeric'), 400);
 
         $pdo = get_db();
         try {
@@ -458,15 +457,15 @@ function register_sayimlar_routes(Router $router): void {
             $stmt->execute([$req['params']['id']]);
             $sayim = $stmt->fetch();
 
-            if (!$sayim) { $pdo->rollBack(); json_error('Sayım bulunamadı.', 404); }
+            if (!$sayim) { $pdo->rollBack(); json_error(__t('sayim.not_found'), 404); }
             if (!check_sayim_yetki($sayim, $req, 'duzenle')) { $pdo->rollBack(); return; }
-            if ($sayim['durum'] !== 'devam') { $pdo->rollBack(); json_error('Tamamlanmış sayıma kalem eklenemez.', 400); }
+            if ($sayim['durum'] !== 'devam') { $pdo->rollBack(); json_error(__t('sayim.cannot_add_to_completed'), 400); }
 
             $stmt = $pdo->prepare('SELECT isletme_id FROM isletme_urunler WHERE id = ?');
             $stmt->execute([$urunId]);
             $urun = $stmt->fetch();
-            if (!$urun) { $pdo->rollBack(); json_error('Ürün bulunamadı.', 404); }
-            if ($urun['isletme_id'] !== $sayim['isletme_id']) { $pdo->rollBack(); json_error('Bu ürün bu işletmeye ait değil.', 400); }
+            if (!$urun) { $pdo->rollBack(); json_error(__t('urun.not_found'), 404); }
+            if ($urun['isletme_id'] !== $sayim['isletme_id']) { $pdo->rollBack(); json_error(__t('sayim.urun_wrong_isletme'), 400); }
 
             $id = uuid_v4();
             $stmt = $pdo->prepare('INSERT INTO sayim_kalemleri (id, sayim_id, urun_id, miktar, birim, notlar) VALUES (?, ?, ?, ?, ?, ?)');
@@ -487,7 +486,7 @@ function register_sayimlar_routes(Router $router): void {
         } catch (\Exception $e) {
             $pdo->rollBack();
             error_log('[sayimlar POST /:id/kalem] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard()]);
 
@@ -500,16 +499,16 @@ function register_sayimlar_routes(Router $router): void {
             $stmt = $pdo->prepare('SELECT kullanici_id, isletme_id, durum, notlar FROM sayimlar WHERE id = ?');
             $stmt->execute([$req['params']['id']]);
             $sayim = $stmt->fetch();
-            if (!$sayim) json_error('Sayım bulunamadı.', 404);
+            if (!$sayim) json_error(__t('sayim.not_found'), 404);
             if (!check_sayim_yetki($sayim, $req, 'duzenle')) return;
-            if ($sayim['durum'] !== 'devam') json_error('Tamamlanmış sayım düzenlenemez.', 400);
+            if ($sayim['durum'] !== 'devam') json_error(__t('sayim.cannot_edit_completed'), 400);
 
             $updates = [];
             $values = [];
             if (isset($body['miktar'])) { $updates[] = 'miktar = ?'; $values[] = $body['miktar']; }
             if (isset($body['birim'])) { $updates[] = 'birim = ?'; $values[] = $body['birim']; }
             if (array_key_exists('notlar', $body)) { $updates[] = 'notlar = ?'; $values[] = $body['notlar']; }
-            if (empty($updates)) json_error('Güncellenecek alan yok.', 400);
+            if (empty($updates)) json_error(__t('general.no_fields_to_update'), 400);
 
             $values[] = $req['params']['kalem_id'];
             $values[] = $req['params']['id'];
@@ -519,11 +518,11 @@ function register_sayimlar_routes(Router $router): void {
             $stmt = $pdo->prepare('SELECT * FROM sayim_kalemleri WHERE id = ? AND sayim_id = ?');
             $stmt->execute([$req['params']['kalem_id'], $req['params']['id']]);
             $row = $stmt->fetch();
-            if (!$row) json_error('Kalem bulunamadı.', 404);
+            if (!$row) json_error(__t('sayim.kalem_not_found'), 404);
             json_response($row);
         } catch (\Exception $e) {
             error_log('[sayimlar PUT /:id/kalem/:kalem_id] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard()]);
 
@@ -534,17 +533,17 @@ function register_sayimlar_routes(Router $router): void {
             $stmt = $pdo->prepare('SELECT kullanici_id, isletme_id, durum, notlar FROM sayimlar WHERE id = ?');
             $stmt->execute([$req['params']['id']]);
             $sayim = $stmt->fetch();
-            if (!$sayim) json_error('Sayım bulunamadı.', 404);
+            if (!$sayim) json_error(__t('sayim.not_found'), 404);
             if (!check_sayim_yetki($sayim, $req, 'duzenle')) return;
-            if ($sayim['durum'] !== 'devam') json_error('Tamamlanmış sayımdan kalem silinemez.', 400);
+            if ($sayim['durum'] !== 'devam') json_error(__t('sayim.cannot_delete_from_completed'), 400);
 
             $pdo->prepare('DELETE FROM sayim_kalemleri WHERE id = ? AND sayim_id = ?')
                 ->execute([$req['params']['kalem_id'], $req['params']['id']]);
 
-            json_response(['mesaj' => 'Kalem silindi.']);
+            json_response(['mesaj' => __t('sayim.kalem_deleted')]);
         } catch (\Exception $e) {
             error_log('[sayimlar DELETE /:id/kalem/:kalem_id] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard()]);
 
@@ -555,9 +554,9 @@ function register_sayimlar_routes(Router $router): void {
         $ad = $body['ad'] ?? '';
         $isletmeId = $body['isletme_id'] ?? null;
 
-        if (!is_array($sayimIds) || count($sayimIds) < 2) json_error('En az 2 sayım seçilmelidir.', 400);
-        if (!trim($ad)) json_error('Toplanmış sayım adı zorunludur.', 400);
-        if (!$isletmeId) json_error('isletme_id zorunludur.', 400);
+        if (!is_array($sayimIds) || count($sayimIds) < 2) json_error(__t('sayim.min_two_required'), 400);
+        if (!trim($ad)) json_error(__t('sayim.topla_name_required'), 400);
+        if (!$isletmeId) json_error(__t('general.isletme_id_required'), 400);
 
         $pdo = get_db();
         try {
@@ -572,14 +571,14 @@ function register_sayimlar_routes(Router $router): void {
 
             if (count($sayimlar) !== count($sayimIds)) {
                 $pdo->rollBack();
-                json_error('Sadece tamamlanmış sayımlar birleştirilebilir.', 400);
+                json_error(__t('sayim.only_completed_can_merge'), 400);
             }
 
             $ilkIsletmeId = $sayimlar[0]['isletme_id'];
             foreach ($sayimlar as $s) {
                 if ($s['isletme_id'] !== $ilkIsletmeId) {
                     $pdo->rollBack();
-                    json_error('Tüm sayımlar aynı işletmeye ait olmalıdır.', 400);
+                    json_error(__t('sayim.same_isletme_required'), 400);
                 }
             }
 
@@ -587,7 +586,7 @@ function register_sayimlar_routes(Router $router): void {
                 foreach ($sayimlar as $s) {
                     if ($s['kullanici_id'] !== $req['user']['id']) {
                         $pdo->rollBack();
-                        json_error('Sadece kendi sayımlarınızı toplayabilirsiniz.', 403);
+                        json_error(__t('sayim.only_own_counts'), 403);
                     }
                 }
             }
@@ -631,7 +630,7 @@ function register_sayimlar_routes(Router $router): void {
         } catch (\Exception $e) {
             $pdo->rollBack();
             error_log('[sayimlar POST /topla] ' . $e->getMessage());
-            json_error('Sunucu hatası.', 500);
+            json_error(__t('general.server_error'), 500);
         }
     }, [auth_guard(), yetki_guard('toplam_sayim', 'ekle', 'body')]);
 }

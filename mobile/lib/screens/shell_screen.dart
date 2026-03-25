@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/connectivity_provider.dart';
+import '../providers/language_provider.dart';
 
 class ShellScreen extends ConsumerStatefulWidget {
   final StatefulNavigationShell navigationShell;
@@ -15,6 +16,8 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
   @override
   Widget build(BuildContext context) {
     final connectivity = ref.watch(connectivityProvider);
+    // Watch language provider to rebuild when language changes
+    ref.watch(languageProvider);
 
     return Scaffold(
       body: widget.navigationShell,
@@ -27,14 +30,14 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 4),
               color: Colors.orange.shade700,
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.cloud_off, color: Colors.white, size: 14),
-                  SizedBox(width: 6),
+                  const Icon(Icons.cloud_off, color: Colors.white, size: 14),
+                  const SizedBox(width: 6),
                   Text(
-                    'Çevrimdışı mod',
-                    style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+                    t('ui.offline_mode'),
+                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
@@ -58,7 +61,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    '${connectivity.bekleyenSync} bekleyen senkronizasyon',
+                    '${connectivity.bekleyenSync} ${t('app.pending_sync')}',
                     style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
                   ),
                 ],
@@ -75,25 +78,25 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
             labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
             height: 65,
             destinations: [
-              const NavigationDestination(
-                icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home),
-                label: 'Ana Sayfa',
+              NavigationDestination(
+                icon: const Icon(Icons.home_outlined),
+                selectedIcon: const Icon(Icons.home),
+                label: t('ui.home'),
               ),
-              const NavigationDestination(
-                icon: Icon(Icons.inventory_2_outlined),
-                selectedIcon: Icon(Icons.inventory_2),
-                label: 'Stoklar',
+              NavigationDestination(
+                icon: const Icon(Icons.inventory_2_outlined),
+                selectedIcon: const Icon(Icons.inventory_2),
+                label: t('ui.stocks'),
               ),
-              const NavigationDestination(
-                icon: Icon(Icons.assignment_outlined),
-                selectedIcon: Icon(Icons.assignment),
-                label: 'Sayımlar',
+              NavigationDestination(
+                icon: const Icon(Icons.assignment_outlined),
+                selectedIcon: const Icon(Icons.assignment),
+                label: t('ui.counts'),
               ),
-              const NavigationDestination(
-                icon: Icon(Icons.settings_outlined),
-                selectedIcon: Icon(Icons.settings),
-                label: 'Ayarlar',
+              NavigationDestination(
+                icon: const Icon(Icons.settings_outlined),
+                selectedIcon: const Icon(Icons.settings),
+                label: t('ui.settings'),
               ),
             ],
           ),

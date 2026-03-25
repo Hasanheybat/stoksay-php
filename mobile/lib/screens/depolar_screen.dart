@@ -10,6 +10,7 @@ import '../services/offline_id_service.dart';
 import '../widgets/aktif_sayim_dialog.dart';
 import 'app_layout.dart';
 
+import '../providers/language_provider.dart';
 const _P = Color(0xFF6C53F5);
 const _PL = Color(0x1A6C53F5);
 
@@ -135,7 +136,7 @@ class _DepolarScreenState extends ConsumerState<DepolarScreen> {
   Widget build(BuildContext context) {
     final canEkle = _seciliIsletmeId != null && ref.read(authProvider.notifier).isletmeYetkisi(_seciliIsletmeId!, 'depo', 'ekle');
     return AppLayout(
-      pageTitle: 'Depolar',
+      pageTitle: t('ui.warehouses'),
       showBack: true,
       onHeaderAction: canEkle ? _showDepoEkle : null,
       headerActionIcon: Icons.add,
@@ -249,16 +250,16 @@ class _DepolarScreenState extends ConsumerState<DepolarScreen> {
                     ),
                   )
                 : _isletmeler.isEmpty
-                    ? const _EmptyState(
+                    ? _EmptyState(
                         icon: Icons.business,
-                        title: 'Atanmış işletme yok',
-                        subtitle: 'Yöneticinizle iletişime geçin',
+                        title: t('app.no_assigned_business'),
+                        subtitle: t('app.contact_admin'),
                       )
                     : _filtreliDepolar.isEmpty
                         ? _EmptyState(
                             icon: Icons.warehouse,
-                            title: _aramaStr.isNotEmpty ? 'Depo bulunamadı' : 'Henüz depo eklenmemiş',
-                            subtitle: _aramaStr.isEmpty ? '+ butonuna basarak ilk depoyu ekleyin' : null,
+                            title: _aramaStr.isNotEmpty ? t('app.no_warehouse_found') : t('app.no_warehouse_added'),
+                            subtitle: _aramaStr.isEmpty ? t('app.add_first_warehouse') : null,
                           )
                         : ListView.builder(
                             padding: const EdgeInsets.fromLTRB(16, 8, 16, 80),
@@ -1158,7 +1159,7 @@ class _EmptyState extends StatelessWidget {
   final String title;
   final String? subtitle;
 
-  const _EmptyState({required this.icon, required this.title, this.subtitle});
+  _EmptyState({required this.icon, required this.title, this.subtitle});
 
   @override
   Widget build(BuildContext context) {

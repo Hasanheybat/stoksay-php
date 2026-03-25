@@ -21,7 +21,7 @@ function yetki_guard(string $kategori, string $islem, string $source = 'query'):
         }
 
         if (!$isletmeId) {
-            json_error('isletme_id zorunludur.', 400);
+            json_error(__t('general.isletme_id_required'), 400);
             return false;
         }
 
@@ -33,13 +33,13 @@ function yetki_guard(string $kategori, string $islem, string $source = 'query'):
         $row = $stmt->fetch();
 
         if (!$row) {
-            json_error('Bu işletmeye erişim yetkiniz yok.', 403);
+            json_error(__t('depo.no_access'), 403);
             return false;
         }
 
         $yetkiler = json_decode($row['yetkiler'], true);
         if (!($yetkiler[$kategori][$islem] ?? false)) {
-            json_error(ucfirst($kategori) . " $islem yetkiniz yok.", 403);
+            json_error(__t('general.permission_denied', ['kategori' => ucfirst($kategori), 'islem' => $islem]), 403);
             return false;
         }
 
