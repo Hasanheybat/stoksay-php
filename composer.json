@@ -1,0 +1,14 @@
+{
+  "name": "stoksay/backend",
+  "description": "StokSay PHP Backend",
+  "require": {
+    "php": ">=7.4",
+    "firebase/php-jwt": "^6.10",
+    "phpoffice/phpspreadsheet": "^1.29"
+  },
+  "config": {
+    "audit": {
+      "block-insecure": false
+    }
+  }
+}

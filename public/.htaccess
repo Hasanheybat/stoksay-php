@@ -1,0 +1,13 @@
+RewriteEngine On
+RewriteBase /
+
+# /api/* isteklerini PHP backend'e yönlendir
+RewriteRule ^api/ - [L]
+
+# Statik dosyalar varsa dokunma
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Diğer tüm istekleri React SPA'ya yönlendir
+RewriteRule . /index.html [L]

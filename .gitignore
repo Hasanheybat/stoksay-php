@@ -1,0 +1,39 @@
+# Dependencies
+/vendor/
+node_modules/
+composer.lock
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Frontend build files
+/public/assets/
+/public/index.html
+
+# Cache
+/storage/cache/
+/storage/sessions/
+
+# Uploaded files (if sensitive)
+/storage/uploads/
+
+# PHP
+*.phar
+config/config.php
